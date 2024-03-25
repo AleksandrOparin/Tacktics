@@ -80,7 +80,7 @@ runRLS() {
         fi
         
         # Если запись о цели была, то проверяем ее скорость
-        local speed prevX prevY discovered
+        local speed=0 prevX prevY discovered
         speed=$(getFieldValue "$findedTargetData" "speed")
         prevX=$(getFieldValue "$findedTargetData" "x")
         prevY=$(getFieldValue "$findedTargetData" "y")
@@ -104,6 +104,9 @@ runRLS() {
         local type
         type=$(getTargetType "$speed")
         if (checkIn "$type" "${RLS['targets']}"); then
+          local findedTargetData1
+          findedTargetData1=$(findByID "${RLS['jsonFile']}" "$id")
+          
           # Если цель не была обнаружена (не передавали о ней информацию), то передаем
           if [[ "$discovered" == "false" ]]; then
             echo "Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
@@ -111,15 +114,15 @@ runRLS() {
               echo "Цель c ID - ${id} движется в направлении СПРО"
             fi
             
-            local updatedData
-            updatedData=$(setFieldValue "$findedTargetData" "discovered" true) # Обновляем поле discovered
-            updateInFile "${RLS['jsonFile']}" "$updatedData"
+            local updatedData1
+            updatedData1=$(setFieldValue "$findedTargetData1" "discovered" true) # Обновляем поле discovered
+            updateInFile "${RLS['jsonFile']}" "$updatedData1"
           fi
         fi
       fi
     done
     
-    sleep 0.5
+    sleep 0.7
   done
 }
 
