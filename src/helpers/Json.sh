@@ -133,3 +133,39 @@ updateInFile() {
     return 1
   fi
 }
+
+#
+removeFromFile() {
+  local file=$1
+  local id=$2
+  
+  # Проверяем, существует и он не пустой
+  if [ ! -f "$file" ]; then
+    return 1 # Файл не существует -> выходим
+  fi
+  
+  # Проверяем, что в файле есть запись с таким ID
+  if (findByID "$file" "$id" true); then
+    # Удаляем запись из файла
+    jq "del(.[] | select(.id == \"$id\"))" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+    return 0
+  else
+    return 1
+  fi
+}
+
+getIDsFromFile() {
+    local file="$1"
+    
+    # Проверяем, существует ли файл
+    if [ ! -f "$file" ]; then
+        return 1
+    fi
+
+    # Извлекаем значения ключа "id" из массива объектов JSON с помощью jq
+    local ids
+    ids=$(jq -r '.[].id' "$file")
+
+    # Возвращаем значения ID, разделенные пробелом
+    echo "$ids"
+}

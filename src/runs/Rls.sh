@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Constants
-source src/constants/Rls.sh
-source src/constants/Spro.sh
+#source src/constants/Rls.sh
+#source src/constants/Spro.sh
 
 # Helpers
 source src/helpers/Json.sh
@@ -92,8 +92,6 @@ runRLS() {
           targetDy=$(echo "scale=$scale;$y - $prevY" | bc)
 
           speed=$(sqrt "$targetDx" "$targetDy")
-          
-          echo "id: $id speed: $speed prevX: $prevX prevY: $prevX x: $x y: $y"
         
           local updatedData
           updatedData=$(setFieldValue "$findedTargetData" "speed" "$speed") # Обновляем поле speed
@@ -125,5 +123,3 @@ runRLS() {
     sleep 0.7
   done
 }
-
-runRLS RLSKeys[@] RLS3[@] SPROKeys[@] SPRO1[@]
