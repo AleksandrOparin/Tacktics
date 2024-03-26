@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Constants
-#source src/constants/Rls.sh
-#source src/constants/Spro.sh
-
 # Helpers
 source src/helpers/Json.sh
 source src/helpers/Math.sh
@@ -46,7 +42,7 @@ runRLS() {
     local filesExists=$?
     if [ ! $filesExists ]; then 
       echo "Targets not exists"
-      sleep 2
+      sleep 1
     fi
     
     # Проходимся по каждой цели
@@ -80,23 +76,31 @@ runRLS() {
         fi
         
         # Если запись о цели была, то проверяем ее скорость
-        local speed=0 prevX prevY discovered
+        local speed prevX prevY discovered
         speed=$(getFieldValue "$findedTargetData" "speed")
         prevX=$(getFieldValue "$findedTargetData" "x")
         prevY=$(getFieldValue "$findedTargetData" "y")
         discovered=$(getFieldValue "$findedTargetData" "discovered")
         
         if [ -z "$speed" ]; then # Если скорости не было, то устанавливаем ее
+          echo "У цели с ID - ${id} были координаты X - ${prevX} Y - ${prevY}"
+          echo "У цели с ID - ${id} стали координаты X - ${x} Y - ${y}"
+        
           local targetDx targetDy
           targetDx=$(echo "scale=$scale;$x - $prevX" | bc)
           targetDy=$(echo "scale=$scale;$y - $prevY" | bc)
 
-          speed=$(sqrt "$targetDx" "$targetDy")
+          local newSpeed
+          newSpeed=$(sqrt "$targetDx" "$targetDy")
+        
+          echo "Цели с ID - ${id} выставляем скорость ${newSpeed}"
         
           local updatedData
-          updatedData=$(setFieldValue "$findedTargetData" "speed" "$speed") # Обновляем поле speed
+          updatedData=$(setFieldValue "$findedTargetData" "speed" "$newSpeed") # Обновляем поле speed
           updateInFile "${RLS['jsonFile']}" "$updatedData"
         fi
+        
+        speed=$newSpeed
         
         # Проверяем тип цели
         local type
@@ -120,6 +124,6 @@ runRLS() {
       fi
     done
     
-    sleep 0.7
+    sleep 0.4
   done
 }

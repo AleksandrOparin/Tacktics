@@ -62,5 +62,16 @@ declare -a RLS3=(
   "Бал.блок"
   "temp/RLS3.json"
 )
+  
+declare -A RLS5=(
+  ['name']="РЛС"
+  ['x']="12000000"
+  ['y']="5000000"
+  ['angle']="135"
+  ['distance']="${VoronezhRLS['distance']}"
+  ['deviation']="${VoronezhRLS['deviation']}"
+  ['targets']="Бал.блок"
+  ['jsonFile']="temp/RLS5.json"
+)
 
-export RLSKeys RLS1 RLS2 RLS3
+export RLSKeys RLS1 RLS2 RLS3 RLS5

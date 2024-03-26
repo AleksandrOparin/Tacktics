@@ -23,6 +23,17 @@ declare -a SPRO1=(
   "temp/SPRO.json"
   "temp/SPRO-shot.json"
 )
+  
+declare -A SPRO2=(
+  ['name']="СПРО"
+  ['x']="9550000"
+  ['y']="3050000"
+  ['distance']="1200000"
+  ['amount']="10"
+  ['targets']="Бал.блок"
+  ['jsonFile']="temp/SPRO2.json"
+  ['shotFile']="temp/SPRO2-shot.json"
+)
 
-export SPROKeys SPRO1
+export SPROKeys SPRO1 SPRO2
   
