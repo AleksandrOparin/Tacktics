@@ -10,41 +10,25 @@ source src/helpers/Target.sh
 source src/dtos/Target.sh
 
 runRLS() {
-  # Получаем ассоциативный массив значений РЛС
-  declare -A RLS
-
-  local rlsKeys=("${!1}")
-  local rlsValues=("${!2}")
-
-  for ((i=0; i<${#rlsKeys[@]}; i++)); do
-      RLS[${rlsKeys[$i]}]=${rlsValues[$i]}
-  done
+  # Получаем ассоциативные массивы значений РЛС и СПРО
+  local -n RLSMap=$1
+  local -n SPROMap=$2
   
-  # Получаем ассоциативный массив значений СПРО
-  declare -A SPRO
-  
-  local sproKeys=("${!3}")
-  local sproValues=("${!4}")
-  
-  for ((i=0; i<${#sproKeys[@]}; i++)); do
-    SPRO[${sproKeys[$i]}]=${sproValues[$i]}
-  done
-
   # Основное содержимое запуска
-  echo "${RLS['name']} started"
+  echo "${RLSMap['name']} started"
   
   while true; do
     # Считываем цели
     declare -a files=()
     files=($(readGeneratedTargets))
-    
+
     # Проверяем существуют ли они
     local filesExists=$?
     if [ ! $filesExists ]; then 
       echo "Targets not exists"
       sleep 1
     fi
-    
+
     # Проходимся по каждой цели
     local file
     for file in "${files[@]}"; do
@@ -53,77 +37,77 @@ runRLS() {
       id="${targetInfo[0]}"
       x="${targetInfo[1]}"
       y="${targetInfo[2]}"
-      
+
       local dx dy
-      dx=$(echo "scale=$scale;$x - ${RLS['x']}" | bc)
-      dy=$(echo "scale=$scale;$y - ${RLS['y']}" | bc)
-      
+      dx=$(echo "scale=$scale;$x - ${RLSMap['x']}" | bc)
+      dy=$(echo "scale=$scale;$y - ${RLSMap['y']}" | bc)
+
       # Если цель в зоне РЛС    
-      if (inSector "$dx" "$dy" "${RLS['distance']}" "${RLS['angle']}" "${RLS['deviation']}"); then
+      if (inSector "$dx" "$dy" "${RLSMap['distance']}" "${RLSMap['angle']}" "${RLSMap['deviation']}"); then
         # Ищем цель в файле с обнаруженными целями
         local findedTargetData
-        findedTargetData=$(findByID "${RLS['jsonFile']}" "$id")
-        
+        findedTargetData=$(findByID "${RLSMap['jsonFile']}" "$id")
+
         # Если записи о цели не было, то добавляем ее 
         local findedTargetExists=$?
         if [ "$findedTargetExists" -eq 1 ]; then
           local data
           data=$(targetToJSON "$id" "$x" "$y")
-          
-          writeToFile "${RLS['jsonFile']}" "$data"
-          
+
+          writeToFile "${RLSMap['jsonFile']}" "$data"
+
           continue # Переходим к следующему файлу
         fi
-        
+
         # Если запись о цели была, то проверяем ее скорость
         local speed prevX prevY discovered
         speed=$(getFieldValue "$findedTargetData" "speed")
         prevX=$(getFieldValue "$findedTargetData" "x")
         prevY=$(getFieldValue "$findedTargetData" "y")
         discovered=$(getFieldValue "$findedTargetData" "discovered")
-        
+
         if [ -z "$speed" ]; then # Если скорости не было, то устанавливаем ее
-          echo "У цели с ID - ${id} были координаты X - ${prevX} Y - ${prevY}"
-          echo "У цели с ID - ${id} стали координаты X - ${x} Y - ${y}"
-        
+#          echo "У цели с ID - ${id} были координаты X - ${prevX} Y - ${prevY}" # TODO: Удалить
+#          echo "У цели с ID - ${id} стали координаты X - ${x} Y - ${y}" # TODO: Удалить
+
           local targetDx targetDy
           targetDx=$(echo "scale=$scale;$x - $prevX" | bc)
           targetDy=$(echo "scale=$scale;$y - $prevY" | bc)
 
           local newSpeed
           newSpeed=$(sqrt "$targetDx" "$targetDy")
-        
-          echo "Цели с ID - ${id} выставляем скорость ${newSpeed}"
-        
+
+#          echo "Цели с ID - ${id} выставляем скорость ${newSpeed}" # TODO: Удалить
+
           local updatedData
           updatedData=$(setFieldValue "$findedTargetData" "speed" "$newSpeed") # Обновляем поле speed
-          updateInFile "${RLS['jsonFile']}" "$updatedData"
+          updateInFile "${RLSMap['jsonFile']}" "$updatedData"
         fi
-        
+
         speed=$newSpeed
-        
+
         # Проверяем тип цели
         local type
         type=$(getTargetType "$speed")
-        if (checkIn "$type" "${RLS['targets']}"); then
+        if (checkIn "$type" "${RLSMap['targets']}"); then
           local findedTargetData1
-          findedTargetData1=$(findByID "${RLS['jsonFile']}" "$id")
-          
+          findedTargetData1=$(findByID "${RLSMap['jsonFile']}" "$id")
+
           # Если цель не была обнаружена (не передавали о ней информацию), то передаем
           if [[ "$discovered" == "false" ]]; then
             echo "Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
-            if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPRO['x']}" "${SPRO['y']}" "${SPRO['distance']}"); then
+            if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPROMap['x']}" "${SPROMap['y']}" "${SPROMap['distance']}"); then
               echo "Цель c ID - ${id} движется в направлении СПРО"
             fi
-            
+
             local updatedData1
             updatedData1=$(setFieldValue "$findedTargetData1" "discovered" true) # Обновляем поле discovered
-            updateInFile "${RLS['jsonFile']}" "$updatedData1"
+            updateInFile "${RLSMap['jsonFile']}" "$updatedData1"
           fi
         fi
       fi
     done
-    
-    sleep 0.4
+
+    sleep 0.5
   done
 }
