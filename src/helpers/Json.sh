@@ -1,58 +1,6 @@
 #!/bin/bash
 
-# Функция возвращает содержимое некоторого поля в строке формата JSON
-# Возвращает 1, если были переданы не все поля, поля с таким именем нет или значение пустое
-# Возвращает 0, если поле было найдено (также возвращает само значение поля)
-getFieldValue() {
-  local jsonData="$1"
-  local fieldName="$2"
-
-  # Проверяем, переданы ли все параметры
-  if [ -z "$jsonData" ] || [ -z "$fieldName" ]; then
-    return 1
-  fi
-
-  # Извлекаем значение поля
-  local fieldValue
-  fieldValue=$(jq -r --arg fieldName "$fieldName" '.[$fieldName]' <<<"$jsonData")
-
-  # Проверяем, было ли найдено значение для указанного поля
-  if [ -z "$fieldValue" ]; then
-    return 1
-  fi
-
-  echo "$fieldValue"
-  return 0
-}
-
-# Функция устанавливет содержимое некоторого поля в строке формата JSON
-# Возвращает 1, если были переданы не все поля, поля с таким именем нет или значение пустое
-# Возвращает 0, если новое значение было установлено (также возвращает новую строку формата JSON)
-setFieldValue() {
-  local jsonData="$1"
-  local fieldName="$2"
-  local fieldValue="$3"
-
-  # Проверяем, переданы ли все параметры
-  if [ -z "$jsonData" ] || [ -z "$id" ] || [ -z "$fieldName" ]; then
-    return 1
-  fi
-
-  # Пытаемся обновить значение поля
-  local updatedJsonData
-  updatedJsonData=$(jq --arg fieldName "$fieldName" --arg fieldValue "$fieldValue" '(if .[$fieldName] then .[$fieldName]=$fieldValue else . end)' <<< "$jsonData")
-  local updated=$?
-
-  # Проверяем, удалось ли обновить
-  if [ $updated -ne 0 ]; then
-    return 1
-  fi
-
-  echo "$updatedJsonData"
-  return 0
-}
-
-# Функция записывает данные в файле формата JSON
+# Функция добавляет запись в файл формата JSON
 # Возвращает 1, если запись уже была в файле (то есть не удалось записать ее)
 # Возвращает 0, если записи не было в файле (то есть удалось записать ее)
 writeToFile() {
@@ -79,8 +27,30 @@ writeToFile() {
   return 0
 }
 
+# Функция удаляет запись по ID в файле формата JSON
+# Возвращает 1, если файла не существует или не удалось найти запись
+# Возвращает 0, если удалось удалить запись
+removeFromFile() {
+  local file=$1
+  local id=$2
+  
+  # Проверяем, существует и он не пустой
+  if [ ! -f "$file" ]; then
+    return 1 # Файл не существует -> выходим
+  fi
+  
+  # Проверяем, что в файле есть запись с таким ID
+  if (findByID "$file" "$id" true); then
+    # Удаляем запись из файла
+    jq "del(.[] | select(.id == \"$id\"))" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+    return 0
+  else
+    return 1
+  fi
+}
+
 # Функция ищет запись по ID в файле формата JSON
-# Возвращает 1, если файла нет или не удалось найти запись
+# Возвращает 1, если файла не существует или не удалось найти запись
 # Возвращает 0, если запись была найдена
 # Дополнительно возвращает запись, если третий параметр = true
 findByID() {
@@ -108,64 +78,77 @@ findByID() {
   fi
 }
 
-# Функция обновляет данные о записи по ID в файле формата JSON
-# Возвращает 1, если файла нет или не удалось найти запись
-# Возвращает 0, если удалось обновить запись
-updateInFile() {
-  local file=$1
-  local data=$2
-  
-  local id
-  id=$(echo "$data" | jq -r '.id')
+# Функция возвращает ID всех записей в файле формата JSON (в виде строки)
+getIDsFromFile() {
+  local file="$1"
   
   # Проверяем, существует ли файл
   if [ ! -f "$file" ]; then
-    return 1 # Файл не существует -> выходим
+    return 1
   fi
-  
+
+  # Извлекаем значения ключа ID из массива объектов JSON
+  local ids
+  ids=$(jq -r '.[].id' "$file")
+
+  # Возвращаем значения ID, разделенные пробелом
+  echo "$ids"
+}
+
+# Функция обновляет значение поля по ID в файле формата JSON
+# Возвращает 1, если не удалось обновить поле
+# Возвращает 0, если удалось обновить поле
+updateFieldInFileByID() {
+  local file="$1"
+  local id="$2"
+  local fieldName="$3"
+  local fieldValue="$4"
+
   # Проверяем, есть ли запись с таким ID
-  if (findByID "$file" "$id" true); then    
-    # Обновляем запись в файле
-    jq "map(if .id == \"$id\" then $data else . end)" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
-    
-    return 0
-  else
+  findByID "$file" "$id" true
+  local found=$?
+  
+  if [ $found -ne 0 ]; then
     return 1
   fi
-}
 
-#
-removeFromFile() {
-  local file=$1
-  local id=$2
+  # Если запись найдена, обновляем поле
+  local updatedData
+  updatedData=$(jq --arg id "$id" --arg fieldName "$fieldName" --arg fieldValue "$fieldValue" \
+    'map(if .id == $id then .[$fieldName] = $fieldValue else . end)' "$file")
+  local updated=$?
   
-  # Проверяем, существует и он не пустой
-  if [ ! -f "$file" ]; then
-    return 1 # Файл не существует -> выходим
-  fi
-  
-  # Проверяем, что в файле есть запись с таким ID
-  if (findByID "$file" "$id" true); then
-    # Удаляем запись из файла
-    jq "del(.[] | select(.id == \"$id\"))" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
-    return 0
-  else
+  if [ $updated -ne 0 ]; then
     return 1
   fi
+  
+  # Сохраняем обновленные данные обратно в файл
+  echo "$updatedData" > "$file"
+  
+  return 0
 }
 
-getIDsFromFile() {
-    local file="$1"
-    
-    # Проверяем, существует ли файл
-    if [ ! -f "$file" ]; then
-        return 1
-    fi
+# Функция возвращает содержимое некоторого поля в строке формата JSON
+# Возвращает 1, если были переданы не все поля, поля с таким именем нет или значение пустое
+# Возвращает 0, если поле было найдено (также возвращает само значение поля)
+getFieldValue() {
+  local jsonData="$1"
+  local fieldName="$2"
 
-    # Извлекаем значения ключа "id" из массива объектов JSON с помощью jq
-    local ids
-    ids=$(jq -r '.[].id' "$file")
+  # Проверяем, переданы ли все параметры
+  if [ -z "$jsonData" ] || [ -z "$fieldName" ]; then
+    return 1
+  fi
 
-    # Возвращаем значения ID, разделенные пробелом
-    echo "$ids"
+  # Извлекаем значение поля
+  local fieldValue
+  fieldValue=$(jq -r --arg fieldName "$fieldName" '.[$fieldName]' <<<"$jsonData")
+
+  # Проверяем, было ли найдено значение для указанного поля
+  if [ -z "$fieldValue" ]; then
+    return 1
+  fi
+
+  echo "$fieldValue"
+  return 0
 }

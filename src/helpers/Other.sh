@@ -17,3 +17,30 @@ checkIn() {
   
   return 1
 }
+
+#
+checkInArray() {
+  local elementToFind=$1
+  
+  local element
+  for element in "${@:2}"; do
+      [[ "$element" == "$elementToFind" ]] && return 0
+  done
+  
+  return 1
+}
+
+#
+removeInArray() {
+    local elementToRemove="$1"
+    shift
+    
+    local newArray=()
+    
+    local element
+    for element in "$@"; do
+        [[ "$element" != "$elementToRemove" ]] && newArray+=("$element")
+    done
+    
+    echo "${newArray[@]}"
+}

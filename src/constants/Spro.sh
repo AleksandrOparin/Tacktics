@@ -8,8 +8,8 @@ declare -A SPRO=(
   ['distance']="1200000"
   ['amount']="10"
   ['targets']="Бал.блок"
-  ['jsonFile']="temp/SPRO2.json"
-  ['shotFile']="temp/SPRO2-shot.json"
+  ['jsonFile']="temp/SPRO.json"
+  ['shotFile']="temp/SPRO-shot.json"
 )
 
 export SPRO
