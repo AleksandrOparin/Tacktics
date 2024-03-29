@@ -1,7 +1,6 @@
 #!/bin/bash
 
 export scale=5
-export PI=$(echo "scale=10; 4*a(1)" | bc -l)
 
 # Функция вычисляет арктангенс, возвращает значение угла в градусах
 arctan() {
@@ -10,7 +9,8 @@ arctan() {
 
   # Вычисляем арктангенс с помощью atan2 и преобразуем его в градусы
   local angle
-  angle=$(echo "scale=$scale; atan2($y, $x) * 180 / $PI" | bc -l)
+  angle=$(awk -v x="$x" -v y="$y" -v scale="$scale" 'BEGIN { PI=atan2(0, -1); printf "%.*f\n", scale, atan2(y, x) * 180 / PI }')
+
 
   # Нормализуем угол в диапазоне от 0 до 360 градусов
   if (( $(echo "$angle < 0" | bc -l) )); then

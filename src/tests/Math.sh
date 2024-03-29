@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "src/colors/colors.sh"
+source "src/colors/Colors.sh"
 source "src/helpers/Math.sh"
 
 assert() {
@@ -16,8 +16,10 @@ assert() {
 
 assertFloat() {
   local expect=$1
-  local get=$(printf "%.1f" "$2")
-  local diff=$(bc -l <<< "$expect - $get")
+  
+  local get diff
+  get=$(awk -v num="$2" 'BEGIN { printf "%.1f", num }')
+  diff=$(bc -l <<< "$expect - $get")
 
   if [[ $(bc -l <<< "$diff <= 0.1") -eq 1 ]]; then
     echoGreen "Тест прошел. Ожидали - ${expect}, получили - ${get}"
@@ -90,7 +92,7 @@ inSectorTests() {
     "4 3 5 30 20 0"
     "-2 2 3 135 20 0"
     "6 -6 8.5 315 10 0"
-    "-4 5 6.5 180 60 0"
+    "-4 5 6.5 150 60 0"
     "0 -7 7 270 0.05 0"
     "5 5 3 45 10 1"
     "-3 1 5 130 20 1"
