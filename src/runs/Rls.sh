@@ -148,7 +148,7 @@ runRLS() {
   local -n RLSMap=$1
   local -n SPROMap=$2
   
-  echo "${RLSMap['name']} started"
+  echo "${RLSMap['name']} запущена"
   
   while true; do
     # Считываем цели
@@ -158,7 +158,7 @@ runRLS() {
     # Проверяем существуют ли они
     local filesExists=$?
     if [ $filesExists -eq 1 ]; then 
-      echo "Targets not exists"
+      echo "Целей не существует"
       sleep 1
     fi
 

@@ -8,7 +8,7 @@ readGeneratedTargets() {
   declare -a files=()
 
   # Считываем последние файлы и информацию из них
-  files=($(ls -t "$TargetsDir" | head -n "$MaxKolTargets"))
+  files=($(ls -tr "$TargetsDir" | tail -n "$MaxKolTargets"))
 
   # Проверяем, нашлись ли файлы
   if [ ${#files[@]} -eq 0 ]; then
