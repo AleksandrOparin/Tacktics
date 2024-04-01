@@ -4,11 +4,13 @@ source src/constants/Variables.sh
 
 # Функция для чтения информации о целях
 readGeneratedTargets() {
+  local targetsCount=${1:-$MaxKolTargets}
+  
   # Объявляем массив файлов
   declare -a files=()
 
   # Считываем последние файлы и информацию из них
-  files=($(ls -tr "$TargetsDir" | tail -n "$MaxKolTargets"))
+  files=($(ls -tr "$TargetsDir" | tail -n "$targetsCount"))
 
   # Проверяем, нашлись ли файлы
   if [ ${#files[@]} -eq 0 ]; then

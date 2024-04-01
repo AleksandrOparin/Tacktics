@@ -188,12 +188,14 @@ runPowerStation() {
   local -a shootTargetsIDs=()
   local amount="${StationMap['amount']}"
   
+  local targetsCount=$MaxKolTargets
+  
   echo "${StationMap['name']} запущена"
   
   while true; do
     # Считываем цели
     declare -a files=()
-    files=($(readGeneratedTargets))
+    files=($(readGeneratedTargets "$targetsCount"))
 
     # Проверяем существуют ли они
     local filesExists=$?
@@ -219,23 +221,13 @@ runPowerStation() {
     local targetID 
     for targetID in "${shootTargetsIDs[@]}"; do
       echo "Цель с ID - ${targetID} уничтожена"
+      ((targetsCount--))
     done
     shootTargetsIDs=()
     
     sleep .9
   done
 }
-
-#runPowerStation SPRO > logs/SPRO.log 2>&1 &
-#echo $! > temp/pids.txt
-#
-#sleep .5
-#
-#./GenTargets.sh &
-#echo $! >> temp/pids.txt
-
-
-
 
 runPowerStation ZRDN1 > logs/ZRDN1.log 2>&1 &
 echo $! > temp/pids.txt
