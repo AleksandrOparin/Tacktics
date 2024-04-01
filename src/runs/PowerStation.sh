@@ -172,6 +172,7 @@ runPowerStation() {
     writeToFile "${StationMap['shotFile']}" "$currentTargetData"
 
     echo "Выстрел в цель с ID - ${id}"
+    ((shootsCount++))
   }
   
   # Получаем ассоциативный массив значений станции
@@ -180,11 +181,16 @@ runPowerStation() {
   local -a shootTargetsIDs=()
   local amount="${StationMap['amount']}"
   
-  local targetsCount=$MaxKolTargets
+  local shootsCount=0
   
   echo "${StationMap['name']} запущена"
   
   while true; do
+    # Считаем, сколько целей нужно получить
+    local targetsCount=$MaxKolTargets
+    ((targetsCount-=shootsCount))
+    shootsCount=0
+    
     # Считываем цели
     declare -a files=()
     files=($(readGeneratedTargets "$targetsCount"))
@@ -210,7 +216,6 @@ runPowerStation() {
     local targetID 
     for targetID in "${shootTargetsIDs[@]}"; do
       echo "Цель с ID - ${targetID} уничтожена"
-      ((targetsCount--))
     done
     shootTargetsIDs=()
     
