@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Constants
+source src/constants/Spro.sh
+source src/constants/Zrdn.sh
+
 # Helpers
 source src/helpers/Json.sh
 source src/helpers/Math.sh
@@ -9,7 +13,7 @@ source src/helpers/Target.sh
 # Dtos
 source src/dtos/Target.sh
 
-runRLS() {
+runPowerStation() {
   # Функция для обработки каждой цели
   processTarget() {
     local file="$1"
@@ -21,25 +25,25 @@ runRLS() {
     x="${targetInfo[1]}"
     y="${targetInfo[2]}"
 
-    # Считаем расстояние от цели до РЛС
+    # Считаем расстояние от цели до станции
     local dx dy
-    dx=$(echo "scale=$scale;$x - ${RLSMap['x']}" | bc)
-    dy=$(echo "scale=$scale;$y - ${RLSMap['y']}" | bc)
+    dx=$(echo "scale=$scale;$x - ${StationMap['x']}" | bc)
+    dy=$(echo "scale=$scale;$y - ${StationMap['y']}" | bc)
 
-    # Проверяем, находится ли цель в секторе обнаружения РЛС
-    if (inSector "$dx" "$dy" "${RLSMap['distance']}" "${RLSMap['angle']}" "${RLSMap['deviation']}"); then
-        handleRLSTarget "$id" "$x" "$y"
+    # Проверяем, находится ли цель в секторе обнаружения станции
+    if (inCircle "$dx" "$dy" "${StationMap['distance']}"); then
+        handleSPROTarget "$id" "$x" "$y"
     fi
   }
   
-  # Функция для обработки взаимодействия РЛС и цели
-  handleRLSTarget() {
+  # Функция для обработки взаимодействия станции и цели
+  handleSPROTarget() {
     local id="$1"
     local x="$2"
     local y="$3"
 
     # Ищем цель в файле с обнаруженными целями
-    findByID "${RLSMap['jsonFile']}" "$id" true
+    findByID "${StationMap['jsonFile']}" "$id" true
 
     # Если записи о цели не было, то это первое обнаружение этой цели
     local findedTargetExists=$?
@@ -63,7 +67,7 @@ runRLS() {
     data=$(targetToJSON "$id" "$x" "$y")
 
     # Записываем сформированный JSON в файл
-    writeToFile "${RLSMap['jsonFile']}" "$data"
+    writeToFile "${StationMap['jsonFile']}" "$data"
   }
   
   # Функция для обработки существующей цели
@@ -74,7 +78,7 @@ runRLS() {
     
     # Ищем цель в файле с обнаруженными целями
     local targetData
-    targetData=$(findByID "${RLSMap['jsonFile']}" "$id")
+    targetData=$(findByID "${StationMap['jsonFile']}" "$id")
 
     # Получаем поля цели
     local speed prevX prevY
@@ -90,7 +94,7 @@ runRLS() {
 
         speed=$(sqrt "$targetDx" "$targetDy")
 
-        updateFieldInFileByID "${RLSMap['jsonFile']}" "$id" "speed" "$speed"
+        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "speed" "$speed"
     fi
 
     checkTargetType "$id" "$x" "$y" "$speed"
@@ -108,8 +112,9 @@ runRLS() {
     type=$(getTargetType "$speed")
     
     # Проверяем, что тип из тех, которые обнаруживает РЛС
-    if (checkIn "$type" "${RLSMap['targets']}"); then
+    if (checkIn "$type" "${StationMap['targets']}"); then
         handleDetectedTarget "$id" "$x" "$y"
+        handleShootTarget "$id"
     fi
   }
   
@@ -121,7 +126,7 @@ runRLS() {
     
     # Ищем цель в файле с обнаруженными целями
     local targetData
-    targetData=$(findByID "${RLSMap['jsonFile']}" "$id")
+    targetData=$(findByID "${StationMap['jsonFile']}" "$id")
 
     # Получаем поля цели
     local speed prevX prevY discovered
@@ -134,21 +139,56 @@ runRLS() {
     if [[ "$discovered" == "false" ]]; then
         echo "Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
 
-        # Если цель летит в сторону СПРО, то также сообщаем об этом
-        if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPROMap['x']}" "${SPROMap['y']}" "${SPROMap['distance']}"); then
-            echo "Цель c ID - ${id} движется в направлении СПРО"
-        fi
-
         # Обновляем поле цели, так как теперь она обнаружена
-        updateFieldInFileByID "${RLSMap['jsonFile']}" "$id" "discovered" true
+        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "discovered" true
     fi
   }
   
-  # Получаем ассоциативные массивы значений РЛС и СПРО
-  local -n RLSMap=$1
-  local -n SPROMap=$2
+  handleShootTarget() {
+    local id="$1"
+    
+    if [ "$amount" -le 0 ]; then
+      echo "У ${StationMap['name']} закончились снаряды"
+      return
+    fi
+    
+    # Данные текущей цели
+    local currentTargetData
+    currentTargetData=$(findByID "${StationMap['jsonFile']}" "$id")
+    
+    # Получаем флаг о том, стреляли ли мы раньше в эту цель
+    checkInArray "$id" "${shootTargetsIDs[@]}"
+    local isShootInTarget=$?
+    
+    # Поверяем выстрел
+    if [ "$isShootInTarget" -eq 1 ]; then # Если не стреляли ранее
+      echo "$id" > "tmp/GenTargets/Destroy/$id"
+      ((amount--))
+      writeToFile "${StationMap['shotFile']}" "$currentTargetData"
+
+      echo "Выстрел в цель с ID - ${id}"
+    else # Если стреляли ранее
+      echo "Промах по цели с ID - ${id}"
+#      echo "shootTargetsIDs - ${shootTargetsIDs[@]} до удаления элемента с ID - ${id}"
+      shootTargetsIDs=($(removeInArray "$id" "${shootTargetsIDs[@]}"))
+#      echo "shootTargetsIDs - ${shootTargetsIDs[@]} после удаления элемента с ID - ${id}"
+
+
+      echo "$id" > "tmp/GenTargets/Destroy/$id"
+      ((amount--))
+      writeToFile "${StationMap['shotFile']}" "$currentTargetData"
+
+      echo "Выстрел в цель с ID - ${id}"
+    fi
+  }
   
-  echo "${RLSMap['name']} запущена"
+  # Получаем ассоциативный массив значений станции
+  local -n StationMap=$1
+  
+  local -a shootTargetsIDs=()
+  local amount="${StationMap['amount']}"
+  
+  echo "${StationMap['name']} запущена"
   
   while true; do
     # Считываем цели
@@ -161,6 +201,13 @@ runRLS() {
       echo "Целей не существует"
       sleep 1
     fi
+    
+    # Получаем все ID целей, по которым стреляли в прошлом цикле
+    shootTargetsIDs=($(getIDsFromFile "${StationMap['shotFile']}"))
+    true >"${StationMap['shotFile']}" # Очищаем файл
+    
+#    echo "Все ID целей, в которые выстрелил в прошлой итерации - ${shootTargetsIDs[@]}"
+#    echo "Полученные 30 целей - ${files[@]}"
 
     # Проходимся по каждой цели
     local file
@@ -168,6 +215,32 @@ runRLS() {
       processTarget "$file"
     done
     
-    sleep .6
+    # Проверяем, какие цели мы уничтожили
+    local targetID 
+    for targetID in "${shootTargetsIDs[@]}"; do
+      echo "Цель с ID - ${targetID} уничтожена"
+    done
+    shootTargetsIDs=()
+    
+    sleep .9
   done
 }
+
+#runPowerStation SPRO > logs/SPRO.log 2>&1 &
+#echo $! > temp/pids.txt
+#
+#sleep .5
+#
+#./GenTargets.sh &
+#echo $! >> temp/pids.txt
+
+
+
+
+runPowerStation ZRDN1 > logs/ZRDN1.log 2>&1 &
+echo $! > temp/pids.txt
+
+sleep .5
+
+./GenTargets.sh &
+echo $! >> temp/pids.txt

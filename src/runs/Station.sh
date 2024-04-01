@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Constants
-source src/constants/Spro.sh
-
 # Helpers
 source src/helpers/Json.sh
 source src/helpers/Math.sh
@@ -12,7 +9,7 @@ source src/helpers/Target.sh
 # Dtos
 source src/dtos/Target.sh
 
-runSPRO() {
+runStation() {
   # Функция для обработки каждой цели
   processTarget() {
     local file="$1"
@@ -24,25 +21,25 @@ runSPRO() {
     x="${targetInfo[1]}"
     y="${targetInfo[2]}"
 
-    # Считаем расстояние от цели до СПРО
+    # Считаем расстояние от цели до станции
     local dx dy
-    dx=$(echo "scale=$scale;$x - ${SPROMap['x']}" | bc)
-    dy=$(echo "scale=$scale;$y - ${SPROMap['y']}" | bc)
+    dx=$(echo "scale=$scale;$x - ${StationMap['x']}" | bc)
+    dy=$(echo "scale=$scale;$y - ${StationMap['y']}" | bc)
 
-    # Проверяем, находится ли цель в секторе обнаружения СПРО
-    if (inCircle "$dx" "$dy" "${SPROMap['distance']}"); then
-        handleSPROTarget "$id" "$x" "$y"
+    # Проверяем, находится ли цель в секторе обнаружения станции
+    if (inSector "$dx" "$dy" "${StationMap['distance']}" "${StationMap['angle']}" "${StationMap['deviation']}"); then
+        handleRLSTarget "$id" "$x" "$y"
     fi
   }
   
-  # Функция для обработки взаимодействия СПРО и цели
-  handleSPROTarget() {
+  # Функция для обработки взаимодействия станции и цели
+  handleRLSTarget() {
     local id="$1"
     local x="$2"
     local y="$3"
 
     # Ищем цель в файле с обнаруженными целями
-    findByID "${SPROMap['jsonFile']}" "$id" true
+    findByID "${StationMap['jsonFile']}" "$id" true
 
     # Если записи о цели не было, то это первое обнаружение этой цели
     local findedTargetExists=$?
@@ -66,7 +63,7 @@ runSPRO() {
     data=$(targetToJSON "$id" "$x" "$y")
 
     # Записываем сформированный JSON в файл
-    writeToFile "${SPROMap['jsonFile']}" "$data"
+    writeToFile "${StationMap['jsonFile']}" "$data"
   }
   
   # Функция для обработки существующей цели
@@ -77,7 +74,7 @@ runSPRO() {
     
     # Ищем цель в файле с обнаруженными целями
     local targetData
-    targetData=$(findByID "${SPROMap['jsonFile']}" "$id")
+    targetData=$(findByID "${StationMap['jsonFile']}" "$id")
 
     # Получаем поля цели
     local speed prevX prevY
@@ -93,7 +90,7 @@ runSPRO() {
 
         speed=$(sqrt "$targetDx" "$targetDy")
 
-        updateFieldInFileByID "${SPROMap['jsonFile']}" "$id" "speed" "$speed"
+        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "speed" "$speed"
     fi
 
     checkTargetType "$id" "$x" "$y" "$speed"
@@ -110,10 +107,9 @@ runSPRO() {
     local type
     type=$(getTargetType "$speed")
     
-    # Проверяем, что тип из тех, которые обнаруживает РЛС
-    if (checkIn "$type" "${SPROMap['targets']}"); then
+    # Проверяем, что тип из тех, которые обнаруживает станция
+    if (checkIn "$type" "${StationMap['targets']}"); then
         handleDetectedTarget "$id" "$x" "$y"
-        handleShootTarget "$id"
     fi
   }
   
@@ -125,7 +121,7 @@ runSPRO() {
     
     # Ищем цель в файле с обнаруженными целями
     local targetData
-    targetData=$(findByID "${SPROMap['jsonFile']}" "$id")
+    targetData=$(findByID "${StationMap['jsonFile']}" "$id")
 
     # Получаем поля цели
     local speed prevX prevY discovered
@@ -138,56 +134,21 @@ runSPRO() {
     if [[ "$discovered" == "false" ]]; then
         echo "Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
 
+        # Если цель летит в сторону СПРО, то также сообщаем об этом
+        if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPROMap['x']}" "${SPROMap['y']}" "${SPROMap['distance']}"); then
+            echo "Цель c ID - ${id} движется в направлении СПРО"
+        fi
+
         # Обновляем поле цели, так как теперь она обнаружена
-        updateFieldInFileByID "${SPROMap['jsonFile']}" "$id" "discovered" true
+        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "discovered" true
     fi
   }
   
-  handleShootTarget() {
-    local id="$1"
-    
-    if [ "$amount" -le 0 ]; then
-      echo "У ${SPROMap['name']} закончились снаряды"
-      return
-    fi
-    
-    # Данные текущей цели
-    local currentTargetData
-    currentTargetData=$(findByID "${SPROMap['jsonFile']}" "$id")
-    
-    # Получаем флаг о том, стреляли ли мы раньше в эту цель
-    checkInArray "$id" "${shootTargetsIDs[@]}"
-    local isShootInTarget=$?
-    
-    # Поверяем выстрел
-    if [ "$isShootInTarget" -eq 1 ]; then # Если не стреляли ранее
-      echo "$id" > "tmp/GenTargets/Destroy/$id"
-      ((amount--))
-      writeToFile "${SPROMap['shotFile']}" "$currentTargetData"
-
-      echo "Выстрел в цель с ID - ${id}"
-    else # Если стреляли ранее
-      echo "Промах по цели с ID - ${id}"
-#      echo "shootTargetsIDs - ${shootTargetsIDs[@]} до удаления элемента с ID - ${id}"
-      shootTargetsIDs=($(removeInArray "$id" "${shootTargetsIDs[@]}"))
-#      echo "shootTargetsIDs - ${shootTargetsIDs[@]} после удаления элемента с ID - ${id}"
-
-
-      echo "$id" > "tmp/GenTargets/Destroy/$id"
-      ((amount--))
-      writeToFile "${SPROMap['shotFile']}" "$currentTargetData"
-
-      echo "Выстрел в цель с ID - ${id}"
-    fi
-  }
+  # Получаем ассоциативные массивы значений станции и СПРО
+  local -n StationMap=$1
+  local -n SPROMap=$2
   
-  # Получаем ассоциативный массив значений СПРО
-  local -n SPROMap=$1
-  
-  local -a shootTargetsIDs=()
-  local amount="${SPROMap['amount']}"
-  
-  echo "${SPROMap['name']} запущена"
+  echo "${StationMap['name']} запущена"
   
   while true; do
     # Считываем цели
@@ -200,13 +161,6 @@ runSPRO() {
       echo "Целей не существует"
       sleep 1
     fi
-    
-    # Получаем все ID целей, по которым стреляли в прошлом цикле
-    shootTargetsIDs=($(getIDsFromFile "${SPROMap['shotFile']}"))
-    true >"${SPROMap['shotFile']}" # Очищаем файл
-    
-#    echo "Все ID целей, в которые выстрелил в прошлой итерации - ${shootTargetsIDs[@]}"
-#    echo "Полученные 30 целей - ${files[@]}"
 
     # Проходимся по каждой цели
     local file
@@ -214,21 +168,6 @@ runSPRO() {
       processTarget "$file"
     done
     
-    # Проверяем, какие цели мы уничтожили
-    local targetID 
-    for targetID in "${shootTargetsIDs[@]}"; do
-      echo "Цель с ID - ${targetID} уничтожена"
-    done
-    shootTargetsIDs=()
-    
-    sleep .9
+    sleep .6
   done
 }
-
-runSPRO SPRO > logs/SPRO.log 2>&1 &
-echo $! > temp/pids.txt
-
-sleep .5
-
-./GenTargets.sh &
-echo $! >> temp/pids.txt
