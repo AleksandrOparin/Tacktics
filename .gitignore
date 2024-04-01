@@ -1,5 +1,7 @@
 .idea
 tmp
+messages
 *.txt
 *.log
 *.json
+*.db
