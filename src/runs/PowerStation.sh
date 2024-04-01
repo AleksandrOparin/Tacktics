@@ -161,25 +161,17 @@ runPowerStation() {
     local isShootInTarget=$?
     
     # Поверяем выстрел
-    if [ "$isShootInTarget" -eq 1 ]; then # Если не стреляли ранее
-      echo "$id" > "tmp/GenTargets/Destroy/$id"
-      ((amount--))
-      writeToFile "${StationMap['shotFile']}" "$currentTargetData"
-
-      echo "Выстрел в цель с ID - ${id}"
-    else # Если стреляли ранее
+    if [ "$isShootInTarget" -eq 0 ]; then # Если стреляли ранее
       echo "Промах по цели с ID - ${id}"
-#      echo "shootTargetsIDs - ${shootTargetsIDs[@]} до удаления элемента с ID - ${id}"
       shootTargetsIDs=($(removeInArray "$id" "${shootTargetsIDs[@]}"))
-#      echo "shootTargetsIDs - ${shootTargetsIDs[@]} после удаления элемента с ID - ${id}"
-
-
-      echo "$id" > "tmp/GenTargets/Destroy/$id"
-      ((amount--))
-      writeToFile "${StationMap['shotFile']}" "$currentTargetData"
-
-      echo "Выстрел в цель с ID - ${id}"
     fi
+    
+    # Стреляем в цель
+    echo "$id" > "tmp/GenTargets/Destroy/$id"
+    ((amount--))
+    writeToFile "${StationMap['shotFile']}" "$currentTargetData"
+
+    echo "Выстрел в цель с ID - ${id}"
   }
   
   # Получаем ассоциативный массив значений станции
@@ -207,9 +199,6 @@ runPowerStation() {
     # Получаем все ID целей, по которым стреляли в прошлом цикле
     shootTargetsIDs=($(getIDsFromFile "${StationMap['shotFile']}"))
     true >"${StationMap['shotFile']}" # Очищаем файл
-    
-#    echo "Все ID целей, в которые выстрелил в прошлой итерации - ${shootTargetsIDs[@]}"
-#    echo "Полученные 30 целей - ${files[@]}"
 
     # Проходимся по каждой цели
     local file
