@@ -7,7 +7,12 @@ source src/helpers/Other.sh
 source src/helpers/Target.sh
 
 # Dtos
+source src/dtos/Message.sh
 source src/dtos/Target.sh
+
+# Runs
+source src/runs/Cp.sh
+
 
 runStation() {
   # Функция для обработки каждой цели
@@ -131,12 +136,15 @@ runStation() {
     discovered=$(getFieldValue "$targetData" "discovered")
 
     # Если цель не была обнаружена (не передавали о ней информацию), то передаем
+    local message=""
     if [[ "$discovered" == "false" ]]; then
-        echo "Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
+        message="Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
+        sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
 
         # Если цель летит в сторону СПРО, то также сообщаем об этом
         if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPROMap['x']}" "${SPROMap['y']}" "${SPROMap['distance']}"); then
-            echo "Цель c ID - ${id} движется в направлении СПРО"
+            message="Цель c ID - ${id} движется в направлении СПРО"
+            sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
         fi
 
         # Обновляем поле цели, так как теперь она обнаружена
@@ -157,8 +165,7 @@ runStation() {
 
     # Проверяем существуют ли они
     local filesExists=$?
-    if [ $filesExists -eq 1 ]; then 
-      echo "Целей не существует"
+    if [ $filesExists -eq 1 ]; then
       sleep 1
     fi
 

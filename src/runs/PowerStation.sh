@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Constants
-source src/constants/Spro.sh
-source src/constants/Zrdn.sh
-
 # Helpers
 source src/helpers/Json.sh
 source src/helpers/Math.sh
@@ -11,7 +7,12 @@ source src/helpers/Other.sh
 source src/helpers/Target.sh
 
 # Dtos
+source src/dtos/Message.sh
 source src/dtos/Target.sh
+
+# Runs
+source src/runs/Cp.sh
+
 
 runPowerStation() {
   # Функция для обработки каждой цели
@@ -137,7 +138,8 @@ runPowerStation() {
 
     # Если цель не была обнаружена (не передавали о ней информацию), то передаем
     if [[ "$discovered" == "false" ]]; then
-        echo "Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
+        local message="Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
+        sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
 
         # Обновляем поле цели, так как теперь она обнаружена
         updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "discovered" true
@@ -147,8 +149,11 @@ runPowerStation() {
   handleShootTarget() {
     local id="$1"
     
+    local message=""
+    
     if [ "$amount" -le 0 ]; then
-      echo "У ${StationMap['name']} закончились снаряды"
+      message="Закончились снаряды"
+      sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
       return
     fi
     
@@ -162,7 +167,9 @@ runPowerStation() {
     
     # Поверяем выстрел
     if [ "$isShootInTarget" -eq 0 ]; then # Если стреляли ранее
-      echo "Промах по цели с ID - ${id}"
+      message="Промах по цели с ID - ${id}"
+      sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
+      
       shootTargetsIDs=($(removeInArray "$id" "${shootTargetsIDs[@]}"))
     fi
     
@@ -171,7 +178,9 @@ runPowerStation() {
     ((amount--))
     writeToFile "${StationMap['shotFile']}" "$currentTargetData"
 
-    echo "Выстрел в цель с ID - ${id}"
+    message="Выстрел в цель с ID - ${id}"
+    sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
+    
     ((shootsCount++))
   }
   
@@ -197,8 +206,7 @@ runPowerStation() {
 
     # Проверяем существуют ли они
     local filesExists=$?
-    if [ $filesExists -eq 1 ]; then 
-      echo "Целей не существует"
+    if [ $filesExists -eq 1 ]; then
       sleep 1
     fi
     
@@ -215,7 +223,8 @@ runPowerStation() {
     # Проверяем, какие цели мы уничтожили
     local targetID 
     for targetID in "${shootTargetsIDs[@]}"; do
-      echo "Цель с ID - ${targetID} уничтожена"
+      local message="Цель с ID - ${targetID} уничтожена"
+      sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
     done
     shootTargetsIDs=()
     

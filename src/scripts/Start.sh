@@ -1,21 +1,32 @@
 #!/bin/bash
 
 # Constants
-source src/constants/Rls.sh
-source src/constants/Spro.sh
+source src/constants/Paths.sh
 
-# Runs
-source src/runs/Station.sh
-source src/runs/PowerStation.sh
+# Очищаем файл с Pid
+true >"$PidsFile"
 
-runStation RLS1 SPRO > logs/RLS1.log 2>&1 &
-echo $! > temp/pids.txt
 
-runStation RLS2 SPRO > logs/RLS2.log 2>&1 &
-echo $! > temp/pids.txt
+# Запускаем КП
+bash src/scripts/Cp/Cp.sh
 
-runStation RLS3 SPRO > logs/RLS3.log 2>&1 &
-echo $! > temp/pids.txt
 
+# Запускаем РЛС
+bash src/scripts/Rls/Rls1.sh
+bash src/scripts/Rls/Rls2.sh
+bash src/scripts/Rls/Rls3.sh
+
+
+# Запускаем СПРО
+bash src/scripts/Spro/Spro.sh
+
+
+# Запускаем ЗРДН
+bash src/scripts/Zrdn/Zrdn1.sh
+bash src/scripts/Zrdn/Zrdn2.sh
+bash src/scripts/Zrdn/Zrdn3.sh
+
+
+# Запускаем генерацию целей
 ./GenTargets.sh &
-echo $! >> temp/pids.txt
+echo $! >> "$PidsFile"
