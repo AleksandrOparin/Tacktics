@@ -2,23 +2,22 @@
 
 source src/constants/Paths.sh
 
+
 rm -rf "$DBFile"
+
 
 sqlite3 "$DBFile" <<EOF
 CREATE TABLE IF NOT EXISTS messages (
-    system TEXT,
-    message TEXT
+    stationName TEXT,
+    detectedTime TEXT,
+    message TEXT,
+    targetId TEXT,
+    targetType TEXT,
+    targetX TEXT,
+    targetY TEXT
 );
 EOF
 
-#sqlite3 "$DBFile" <<EOF
-#CREATE TABLE IF NOT EXISTS messages (
-#    timestamp TEXT,
-#    system TEXT,
-#    message TEXT,
-#    target_type TEXT,
-#);
-#EOF
 
 isCreated=$?
 if [ $isCreated -eq 0 ]; then

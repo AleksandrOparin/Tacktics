@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Helpers
+source src/helpers/Cp.sh
 source src/helpers/Json.sh
 source src/helpers/Math.sh
 source src/helpers/Other.sh
@@ -9,9 +10,6 @@ source src/helpers/Target.sh
 # Dtos
 source src/dtos/Message.sh
 source src/dtos/Target.sh
-
-# Runs
-source src/runs/Cp.sh
 
 
 runPowerStation() {
@@ -130,19 +128,19 @@ runPowerStation() {
     targetData=$(findByID "${StationMap['jsonFile']}" "$id")
 
     # Получаем поля цели
-    local speed prevX prevY discovered
+    local speed prevX prevY detected
     speed=$(getFieldValue "$targetData" "speed")
     prevX=$(getFieldValue "$targetData" "x")
     prevY=$(getFieldValue "$targetData" "y")
-    discovered=$(getFieldValue "$targetData" "discovered")
+    detected=$(getFieldValue "$targetData" "detected")
 
     # Если цель не была обнаружена (не передавали о ней информацию), то передаем
-    if [[ "$discovered" == "false" ]]; then
+    if [[ "$detected" == "false" ]]; then
         local message="Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
         sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
 
         # Обновляем поле цели, так как теперь она обнаружена
-        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "discovered" true
+        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detected" true
     fi
   }
   
@@ -211,7 +209,7 @@ runPowerStation() {
     fi
     
     # Получаем все ID целей, по которым стреляли в прошлом цикле
-    shootTargetsIDs=($(getIDsFromFile "${StationMap['shotFile']}"))
+    shootTargetsIDs=($(getFieldsFromFile "${StationMap['shotFile']}"))
     true >"${StationMap['shotFile']}" # Очищаем файл
 
     # Проходимся по каждой цели

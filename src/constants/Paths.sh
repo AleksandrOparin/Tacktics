@@ -8,5 +8,5 @@ export DBFile="db/messages.db"
 export MessagesPath="messages/ToCP"
 
 
-# Pids
-export PidsFile="temp/pids.txt"
+# PIDs
+export PIDsFile="temp/PIDs.json"

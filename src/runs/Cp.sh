@@ -1,68 +1,30 @@
 #!/bin/bash
 
-source src/Credentials.sh
-
+# Constants
+source src/constants/Cp.sh
+source src/constants/Messages.sh
 source src/constants/Paths.sh
 
-source src/db/Db.sh
-
-source src/helpers/Random.sh
+# Helpers
+source src/helpers/Cp.sh
+source src/helpers/Db.sh
 source src/helpers/Json.sh
+source src/helpers/Time.sh
 
-sendDataToCP() {
-  local jsonData=$1
-  
-  # Шифруем данные
-  local encryptedData
-  encryptedData=$(echo "$jsonData" | openssl enc -aes-256-cbc -e -a -pbkdf2 -iter "$ItersCount" -k "$Password")
-  
-  # Вычисляем контрольную сумму зашифрованных данных
-  local checksum
-  checksum=$(echo -n "$encryptedData" | md5sum | awk '{print $1}')
-  
-  # Создаем файл
-  local file
-  file="$MessagesPath/$(generateRandomSequence)"
-    
-  # Записываем в него зашифрованные данные и контрольную сумму
-  echo "$encryptedData$checksum" > "$file"
-}
 
-decryptDataFromPC() {
-  local file=$1
-  
-  local encryptedDataWithChecksum
-  encryptedDataWithChecksum=$(cat "$file")
-  
-  # Читаем зашифрованные данные и контрольную сумму
-  local checksum encryptedData
-  checksum=${encryptedDataWithChecksum: -32}
-  encryptedData=${encryptedDataWithChecksum%"$checksum"}
-  
-  # Проверяем контрольную сумму
-  local calculatedChecksum
-  calculatedChecksum=$(echo -n "$encryptedData" | md5sum | awk '{print $1}')
-  if [[ "$calculatedChecksum" != "$checksum" ]]; then
-      return 1
-  fi
-  
-  # Декодируем данные
-  local jsonData
-  jsonData=$(echo "$encryptedData" | openssl enc -aes-256-cbc -d -a -pbkdf2 -iter "$ItersCount" -k "$Password")
-
-  # Возвращаем данные
-  echo "$jsonData"
-}
-
-runCP() {
+runCP() {  
   local directory=$MessagesPath
+  
+  # Проверяем, что КП еще не запущен
+  if (findByName "$PIDsFile" "${CP['name']}" true); then
+    return
+  fi
   
   # Цикл для непрерывного чтения файлов
   while true; do
     # Объявляем массив файлов и считываем их
     declare -a files=()
     files=($(ls "$directory"))
-    echo "$files"
   
     # Перебираем файлы
     local file
@@ -74,25 +36,28 @@ runCP() {
         local isDecrypted=$?
         
         if [ $isDecrypted -eq 1 ]; then
-          insertInDB "Неизвестно" "Не совпадают контрольные суммы, попытка НСД!"
+          insertMessageInDB "${Messaages['unknown']}" "$(getTime)" "${Messaages['unauthorizedAccess']}"
           continue
         fi
         
         # Извлекаем данные из JSON
-        local name message
-        name=$(getFieldValue "$jsonData" "name")
+        local stationName detectedTime message targetId targetType targetX targetY
+        stationName=$(getFieldValue "$jsonData" "stationName")
+        detectedTime=$(getFieldValue "$jsonData" "detectedTime")
         message=$(getFieldValue "$jsonData" "message")
+        targetId=$(getFieldValue "$jsonData" "targetId")
+        targetType=$(getFieldValue "$jsonData" "targetType")
+        targetX=$(getFieldValue "$jsonData" "targetX")
+        targetY=$(getFieldValue "$jsonData" "targetY")
         
         # Добавляем запись в БД
-        echo "insertInDB $name" "$message"
-        insertInDB "$name" "$message"
+        insertMessageInDB "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY"
         
         # Удаляем файл после обработки
         rm "$directory/$file"
       fi
     done
 
-    # Ждем 0.5 секунды перед повторной проверкой
     sleep 0.5
   done
 }

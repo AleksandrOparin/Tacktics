@@ -2,7 +2,7 @@
 
 rm logs/*.log 2>/dev/null  # Удаляем временные log файлы
 
-rm messages/ToCp/* 2>/dev/null # Удаляем
+rm messages/ToCP/* 2>/dev/null # Удаляем
 
 rm temp/*.json 2>/dev/null # Удаляем временные json файлы
 rm temp/*.txt 2>/dev/null  # Удаляем временные txt файлы

@@ -1,6 +1,8 @@
 #!/bin/bash
 
+# Constants
 source src/constants/Variables.sh
+
 
 # Функция для чтения информации о целях
 readGeneratedTargets() {
