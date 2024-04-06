@@ -10,7 +10,8 @@ export AllLogsFile="${LogsDir}/All.log"
 
 
 # Messages
-export MessagesDir="messages/ToCP"
+export MessagesDir="messages"
+export CPMessagesDir="${MessagesDir}/ToCP"
 
 
 # Temp

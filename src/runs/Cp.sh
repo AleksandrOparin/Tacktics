@@ -14,7 +14,7 @@ source src/helpers/Time.sh
 
 
 runCP() {  
-  local directory=$MessagesDir
+  local directory=$CPMessagesDir
   
   # Проверяем, что КП еще не запущен
   if (findByName "$PIDsFile" "${CP['name']}" true); then

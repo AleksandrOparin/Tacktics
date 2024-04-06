@@ -35,7 +35,7 @@ sendDataToCP() {
   
   # Создаем файл
   local file
-  file="$MessagesDir/$(generateRandomSequence)"
+  file="$CPMessagesDir/$(generateRandomSequence)"
     
   # Записываем в него зашифрованные данные и контрольную сумму
   echo "$encryptedData$checksum" > "$file"
