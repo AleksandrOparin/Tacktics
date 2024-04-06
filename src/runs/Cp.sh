@@ -24,7 +24,7 @@ runCP() {
   while true; do
     # Объявляем массив файлов и считываем их
     declare -a files=()
-    files=($(ls "$directory"))
+    files=($(ls -rt "$directory"))
   
     # Перебираем файлы
     local file
@@ -52,7 +52,8 @@ runCP() {
         
         # Добавляем запись в БД
         insertMessageInDB "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY"
-        
+        echo -e "$stationName\t$detectedTime\t$message\t\t\t$targetId\t$targetType\t$targetX\t$targetY\t" >> "$AllLogsFile"
+                
         # Удаляем файл после обработки
         rm "$directory/$file"
       fi

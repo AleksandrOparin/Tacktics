@@ -2,7 +2,7 @@
 # Version 2.2
 declare -a TargetsId
 MaxKolTargets=29      #+1
-Probability=7         #вероятность поражения 10-90%
+Probability=3         #вероятность поражения 10-90%
 
 RangeX=13000000       #метры
 RangeY=9000000        #метры

@@ -11,8 +11,9 @@ source src/dtos/Pid.sh
 source src/helpers/Json.sh
 
 
-# Очищаем файл с Pid
+# Очищаем
 true >"$PIDsFile"
+true >"$AllLogsFile"
 
 
 # Создаем БД
@@ -28,14 +29,19 @@ sleep 0.5
 
 # Запускаем РЛС
 bash src/scripts/starts/rls/Rls1.sh
-sleep 1
+sleep 0.5
 bash src/scripts/starts/rls/Rls2.sh
-sleep 1
+sleep 0.5
 bash src/scripts/starts/rls/Rls3.sh
+sleep 0.5
 
 
 # Запускаем СПРО
-#bash src/scripts/Spro/Spro.sh
+bash src/scripts/starts/Spro.sh
+sleep 1.5
+
+
+
 
 
 # Запускаем ЗРДН

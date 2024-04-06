@@ -1,21 +1,25 @@
 #!/bin/bash
 
+# Constants
+source src/constants/Messages.sh
+source src/constants/Paths.sh
+
 # Helpers
 source src/helpers/Cp.sh
 source src/helpers/Json.sh
 source src/helpers/Math.sh
 source src/helpers/Other.sh
 source src/helpers/Target.sh
+source src/helpers/Time.sh
 
 # Dtos
-source src/dtos/Message.sh
 source src/dtos/Target.sh
 
 
 runPowerStation() {
   # Функция для обработки каждой цели
   processTarget() {
-    local file="$1"
+    local file=$1
     
     # Получаем информацию о цели (id x y)
     local targetInfo id x y
@@ -37,9 +41,9 @@ runPowerStation() {
   
   # Функция для обработки взаимодействия станции и цели
   handleSPROTarget() {
-    local id="$1"
-    local x="$2"
-    local y="$3"
+    local id=$1
+    local x=$2
+    local y=$3
 
     # Ищем цель в файле с обнаруженными целями
     findByID "${StationMap['jsonFile']}" "$id" true
@@ -57,9 +61,9 @@ runPowerStation() {
   
   # Функция для обработки новой цели
   handleNewTarget() {
-    local id="$1"
-    local x="$2"
-    local y="$3"
+    local id=$1
+    local x=$2
+    local y=$3
 
     # Формируем JSON из данных о цели
     local data
@@ -71,17 +75,18 @@ runPowerStation() {
   
   # Функция для обработки существующей цели
   handleExistingTarget() {
-    local id="$1"
-    local x="$2"
-    local y="$3"
+    local id=$1
+    local x=$2
+    local y=$3
     
     # Ищем цель в файле с обнаруженными целями
     local targetData
     targetData=$(findByID "${StationMap['jsonFile']}" "$id")
 
     # Получаем поля цели
-    local speed prevX prevY
+    local speed type prevX prevY
     speed=$(getFieldValue "$targetData" "speed")
+    type=$(getFieldValue "$targetData" "type")
     prevX=$(getFieldValue "$targetData" "x")
     prevY=$(getFieldValue "$targetData" "y")
 
@@ -91,68 +96,76 @@ runPowerStation() {
         targetDx=$(echo "scale=$scale;$x - $prevX" | bc)
         targetDy=$(echo "scale=$scale;$y - $prevY" | bc)
 
-        speed=$(sqrt "$targetDx" "$targetDy")
+        speed=$(sqrt "$targetDx" "$targetDy") # Считаем скорость цели
+        type=$(getTargetType "$speed") # Получаем тип цели в зависимости от скорости
 
+        # Обновляем поля в файле
         updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "speed" "$speed"
+        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "type" "$type"
     fi
 
-    checkTargetType "$id" "$x" "$y" "$speed"
+    checkTargetType "$id" "$x" "$y" "$type"
   }
   
   # Функция для проверки типа цели
   checkTargetType() {
-    local id="$1"
-    local x="$2"
-    local y="$3"
-    local speed="$4"
-
-    # Получаем тип цели в зависимости от скорости
-    local type
-    type=$(getTargetType "$speed")
+    local id=$1
+    local x=$2
+    local y=$3
+    local type=$4
     
     # Проверяем, что тип из тех, которые обнаруживает РЛС
     if (checkIn "$type" "${StationMap['targets']}"); then
-        handleDetectedTarget "$id" "$x" "$y"
-        handleShootTarget "$id"
+        handleDetectedTarget "$id" "$x" "$y" "$type"
+        handleShootTarget "$id" "$x" "$y" "$type"
     fi
   }
   
   # Функция для обработки обнаруженной цели
   handleDetectedTarget() {
-    local id="$1"
-    local x="$2"
-    local y="$3"
+    local id=$1
+    local x=$2
+    local y=$3
+    local type=$4
     
     # Ищем цель в файле с обнаруженными целями
     local targetData
     targetData=$(findByID "${StationMap['jsonFile']}" "$id")
 
     # Получаем поля цели
-    local speed prevX prevY detected
-    speed=$(getFieldValue "$targetData" "speed")
-    prevX=$(getFieldValue "$targetData" "x")
-    prevY=$(getFieldValue "$targetData" "y")
+    local detected
     detected=$(getFieldValue "$targetData" "detected")
 
     # Если цель не была обнаружена (не передавали о ней информацию), то передаем
     if [[ "$detected" == "false" ]]; then
-        local message="Обнаружена цель c ID - ${id} и координатами X - ${x} Y - ${y}"
-        sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
+        sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDetected']}" "$id" "$type" "$x" "$y"
 
         # Обновляем поле цели, так как теперь она обнаружена
         updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detected" true
+        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detectedTime" "$(getTime)"
     fi
   }
   
   handleShootTarget() {
-    local id="$1"
+    local id=$1
+    local x=$2
+    local y=$3
+    local type=$4
     
-    local message=""
+    # Костыль, чтобы отправить всего 1 соообщение о том, что закончились снаряды
+    if [ "$amount" -eq 0 ]; then
+      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['emptyAmount']}"
+      ((amount--)) # Уменьшаем до -1
+    fi
     
+    # Если снарядов не осталось
     if [ "$amount" -le 0 ]; then
-      message="Закончились снаряды"
-      sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
       return
+    fi
+    
+    # Если осталось 5 снарядов
+    if [ "$amount" -eq 5 ]; then
+      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['getAmount']}$amount"
     fi
     
     # Данные текущей цели
@@ -165,19 +178,17 @@ runPowerStation() {
     
     # Поверяем выстрел
     if [ "$isShootInTarget" -eq 0 ]; then # Если стреляли ранее
-      message="Промах по цели с ID - ${id}"
-      sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
+      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['missedTarget']}" "$id" "$type" "$x" "$y"
       
       shootTargetsIDs=($(removeInArray "$id" "${shootTargetsIDs[@]}"))
     fi
     
     # Стреляем в цель
-    echo "$id" > "tmp/GenTargets/Destroy/$id"
+    echo "$id" > "$DestroyPath$id"
     ((amount--))
     writeToFile "${StationMap['shotFile']}" "$currentTargetData"
 
-    message="Выстрел в цель с ID - ${id}"
-    sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
+    sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['shotAtTarget']}" "$id" "$type" "$x" "$y"
     
     ((shootsCount++))
   }
@@ -185,12 +196,19 @@ runPowerStation() {
   # Получаем ассоциативный массив значений станции
   local -n StationMap=$1
   
+  # Проверяем, что станция еще не запущена
+  if (findByName "$PIDsFile" "${StationMap['name']}" true); then
+    return
+  fi
+  
+  # Посылаем сообщение о том, что станция запущена
+  echo "${StationMap['name']} запущена"
+  sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['stationActive']}"
+  
   local -a shootTargetsIDs=()
   local amount="${StationMap['amount']}"
   
   local shootsCount=0
-  
-  echo "${StationMap['name']} запущена"
   
   while true; do
     # Считаем, сколько целей нужно получить
@@ -221,19 +239,20 @@ runPowerStation() {
     # Проверяем, какие цели мы уничтожили
     local targetID 
     for targetID in "${shootTargetsIDs[@]}"; do
-      local message="Цель с ID - ${targetID} уничтожена"
-      sendDataToCP "$(messageToJSON "${StationMap['name']}" "$message")"
+      # Данные текущей цели
+      local targetData
+      targetData=$(findByID "${StationMap['jsonFile']}" "$targetID")
+      
+      # Получаем поля
+      local type x y
+      type=$(getFieldValue "$targetData" "type")
+      x=$(getFieldValue "$targetData" "x")
+      y=$(getFieldValue "$targetData" "y")
+      
+      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDestroyed']}" "$targetID" "$type" "$x" "$y"
     done
     shootTargetsIDs=()
     
-    sleep .9
+    sleep .8
   done
 }
-
-runPowerStation ZRDN1 > logs/ZRDN1.log 2>&1 &
-echo $! > temp/pids.txt
-
-sleep .5
-
-./GenTargets.sh &
-echo $! >> temp/pids.txt

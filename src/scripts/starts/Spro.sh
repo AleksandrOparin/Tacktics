@@ -4,8 +4,14 @@
 source src/constants/Paths.sh
 source src/constants/Spro.sh
 
+# Dtos
+source src/dtos/Pid.sh
+
+# Helpers
+source src/helpers/Json.sh
+
 # Runs
 source src/runs/PowerStation.sh
 
 runPowerStation SPRO 2>&1 &
-echo $! >> "$PidsFile"
+writeToFileCheckName "$PIDsFile" "$(pidToJSON "${SPRO['name']}" "$!")"
