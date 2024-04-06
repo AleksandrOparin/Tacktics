@@ -5,16 +5,27 @@ export DBFile="db/messages.db"
 
 
 # Logs
-export AllLogsFile="logs/All.log"
+export LogsDir="logs"
+export AllLogsFile="${LogsDir}/All.log"
 
 
 # Messages
-export MessagesPath="messages/ToCP"
+export MessagesDir="messages/ToCP"
 
 
-# PIDs
-export PIDsFile="temp/PIDs.json"
+# Temp
+export TempDir="temp"
+
+
+# Tmp
+export TmpDir="tmp"
 
 
 # Targets
-export DestroyPath="tmp/GenTargets/Destroy/"
+export GenTargetsDir="${TmpDir}/GenTargets"
+export TargetsDir="${GenTargetsDir}/Targets"
+export DestroyDir="${GenTargetsDir}/Destroy"
+
+
+# PIDs
+export PIDsFile="${TempDir}/PIDs.json"

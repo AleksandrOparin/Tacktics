@@ -1,12 +1,19 @@
 #!/bin/bash
 
-rm logs/*.log 2>/dev/null  # Удаляем временные log файлы
+# Constants
+source src/constants/Paths.sh
 
-rm messages/ToCP/* 2>/dev/null # Удаляем
 
-rm temp/*.json 2>/dev/null # Удаляем временные json файлы
-rm temp/*.txt 2>/dev/null  # Удаляем временные txt файлы
+rm "${LogsDir:?}"/*.log 2>/dev/null  # Удаляем временные log файлы
 
-rm -rf tmp/GenTargets/Destroy/* 2>/dev/null # Удаляем
-rm -rf tmp/GenTargets/Targets/* 2>/dev/null # Удаляем сгенерированные цели
-rm tmp/GenTargets/*.log 2>/dev/null # Удаляем log файл
+
+rm "${MessagesDir:?}"/* 2>/dev/null # Удаляем сообщения для КП
+
+
+rm "${TempDir:?}"/*.json 2>/dev/null # Удаляем временные json файлы
+rm "${TempDir:?}"/*.txt 2>/dev/null  # Удаляем временные txt файлы
+
+
+rm "${GenTargetsDir:?}"/*.log 2>/dev/null # Удаляем log файл
+rm -rf "${TargetsDir:?}"/* 2>/dev/null # Удаляем сгенерированные цели
+rm -rf "${DestroyDir:?}"/* 2>/dev/null # Удаляем уничтоженные цели

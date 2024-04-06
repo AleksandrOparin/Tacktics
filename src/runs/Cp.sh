@@ -14,7 +14,7 @@ source src/helpers/Time.sh
 
 
 runCP() {  
-  local directory=$MessagesPath
+  local directory=$MessagesDir
   
   # Проверяем, что КП еще не запущен
   if (findByName "$PIDsFile" "${CP['name']}" true); then
@@ -51,9 +51,11 @@ runCP() {
         targetX=$(getFieldValue "$jsonData" "targetX")
         targetY=$(getFieldValue "$jsonData" "targetY")
         
-        # Добавляем запись в БД
+        # Добавляем запись в БД и в логи
         insertMessageInDB "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY"
         format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "$AllLogsFile"
+        format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "${LogsDir}/${stationName}.log"
+
                 
         # Удаляем файл после обработки
         rm "$directory/$file"

@@ -184,7 +184,7 @@ runPowerStation() {
     fi
     
     # Стреляем в цель
-    echo "$id" > "$DestroyPath$id"
+    echo "$id" > "${DestroyDir}/${id}"
     ((amount--))
     writeToFile "${StationMap['shotFile']}" "$currentTargetData"
 

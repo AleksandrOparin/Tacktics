@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Constants
+source src/constants/Paths.sh
 source src/constants/Variables.sh
 
 
@@ -12,7 +13,7 @@ readGeneratedTargets() {
   declare -a files=()
 
   # Считываем последние файлы и информацию из них
-  files=($(ls -tr "$TargetsDir" | tail -n "$targetsCount"))
+  files=($(ls -tr "$TargetsDir/" | tail -n "$targetsCount"))
 
   # Проверяем, нашлись ли файлы
   if [ ${#files[@]} -eq 0 ]; then
