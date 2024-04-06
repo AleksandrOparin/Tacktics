@@ -8,6 +8,7 @@ source src/constants/Paths.sh
 # Helpers
 source src/helpers/Cp.sh
 source src/helpers/Db.sh
+source src/helpers/Format.sh
 source src/helpers/Json.sh
 source src/helpers/Time.sh
 
@@ -52,7 +53,7 @@ runCP() {
         
         # Добавляем запись в БД
         insertMessageInDB "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY"
-        echo -e "$stationName\t$detectedTime\t$message\t\t\t$targetId\t$targetType\t$targetX\t$targetY\t" >> "$AllLogsFile"
+        format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "$AllLogsFile"
                 
         # Удаляем файл после обработки
         rm "$directory/$file"
