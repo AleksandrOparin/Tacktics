@@ -39,22 +39,23 @@ writeToFileCheckName() {
 }
 
 
-# Функция удаляет запись по ID в файле формата JSON
+# Функция удаляет запись по некоторому полю в файле формата JSON
 # Возвращает 1, если файла не существует или не удалось найти запись
 # Возвращает 0, если удалось удалить запись
 removeFromFile() {
   local file=$1
-  local id=$2
+  local field=$2
+  local value=$3
   
   # Проверяем, существует и он не пустой
   if [ ! -f "$file" ]; then
     return 1 # Файл не существует -> выходим
   fi
   
-  # Проверяем, что в файле есть запись с таким ID
-  if (findByID "$file" "$id" true); then
+  # Проверяем, что в файле есть запись с таким значением поля
+  if (findByField "$file" "$field" "$value" true); then
     # Удаляем запись из файла
-    jq "del(.[] | select(.id == \"$id\"))" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+    jq "del(.[] | select(.$field == \"$value\"))" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
     return 0
   else
     return 1
