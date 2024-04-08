@@ -17,21 +17,25 @@ bash db/CreateDb.sh
 
 # Запускаем РЛС
 bash src/scripts/starts/rls/Rls1.sh
-sleep 0.8
+sleep 0.2
 bash src/scripts/starts/rls/Rls2.sh
-sleep 0.8
+sleep 0.2
 bash src/scripts/starts/rls/Rls3.sh
-sleep 0.8
+sleep 0.2
+
+
+sleep 0.5
+
+
+# Запускаем СПРО
+bash src/scripts/starts/Spro.sh
+sleep 1
 
 
 # Запускаем КП
 bash src/scripts/starts/Cp.sh
 
 
-## Запускаем СПРО
-#bash src/scripts/starts/Spro.sh
-#sleep 1.4
-#
 #
 ## Запускаем ЗРДН
 #bash src/scripts/starts/zrdn/Zrdn1.sh
@@ -41,7 +45,7 @@ bash src/scripts/starts/Cp.sh
 #bash src/scripts/starts/zrdn/Zrdn3.sh
 
 
-sleep 1
+sleep 0.5
 
 
 # Запускаем генерацию целей

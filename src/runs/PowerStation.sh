@@ -9,6 +9,7 @@ source src/helpers/Cp.sh
 source src/helpers/Json.sh
 source src/helpers/Math.sh
 source src/helpers/Other.sh
+source src/helpers/Ping.sh
 source src/helpers/Target.sh
 source src/helpers/Time.sh
 
@@ -196,14 +197,28 @@ runPowerStation() {
   # Получаем ассоциативный массив значений станции
   local -n StationMap=$1
   
-  # Проверяем, что станция еще не запущена
-  if (findByName "$PIDsFile" "${StationMap['name']}" true); then
+  # Сохраняем информацию о станции
+  writeToFileCheckName "$PIDsFile" "$(processToJSON "${StationMap['name']}")"
+  
+  # Получаем запись о станции
+  local stationData
+  stationData=$(findByName "$PIDsFile" "${StationMap['name']}")
+
+  # Получаем поле, активна ли станция
+  local active
+  active=$(getFieldValue "$stationData" "active")
+
+  # Если активна, то выходим
+  if [[ $active == "true" ]]; then
+    echo "${StationMap['name']} уже запущена"
     return
   fi
   
-  # Посылаем сообщение о том, что станция запущена
   echo "${StationMap['name']} запущена"
-  sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['stationActive']}"
+
+  # Активируем отслеживание сообщений
+  handlePing "${StationMap['name']}" &
+  updateFieldInFileByName "$PIDsFile" "${StationMap['name']}" "workPid" "$!"
   
   local -a shootTargetsIDs=()
   local amount="${StationMap['amount']}"
@@ -211,6 +226,19 @@ runPowerStation() {
   local shootsCount=0
   
   while true; do
+    # Получаем информацию о станции
+    local newStationData
+    newStationData=$(findByName "$PIDsFile" "${StationMap['name']}")
+    
+    # Получаем поле, активна ли станция
+    local newActive
+    newActive=$(getFieldValue "$newStationData" "active")
+    
+    if [[ $newActive == "false" ]]; then
+      sleep 1
+      continue
+    fi
+    
     # Считаем, сколько целей нужно получить
     local targetsCount=$MaxKolTargets
     ((targetsCount-=shootsCount))
