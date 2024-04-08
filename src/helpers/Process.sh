@@ -41,3 +41,13 @@ stopProcessByName() {
   kill "$workPid"
   removeFromFile "$PIDsFile" "name" "$name"
 }
+
+stop() {
+  local pattern="src/scripts/starts"
+  
+  pgrep -fla "$pattern"
+  
+  pkill -f "$pattern"
+}
+
+#stop
