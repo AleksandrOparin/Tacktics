@@ -4,9 +4,6 @@
 source src/constants/Cp.sh
 source src/constants/Paths.sh
 
-# Dtos
-source src/dtos/Pid.sh
-
 # Helpers
 source src/helpers/Json.sh
 
@@ -15,4 +12,5 @@ source src/runs/Cp.sh
 
 
 runCP 2>/dev/null &
-writeToFileCheckName "$PIDsFile" "$(pidToJSON "${CP['name']}" "$!")"
+sleep 0.2
+updateFieldInFileByName "$PIDsFile" "${CP['name']}" "pid" "$!"

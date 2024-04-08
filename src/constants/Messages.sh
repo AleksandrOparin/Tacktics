@@ -1,7 +1,9 @@
 #!/bin/bash
 
 declare -A Messages=(
-  ['stationActive']="Станция запущена"
+  ['stationActive']="Станция активна"
+  ['stationDisable']="Станция не активна"
+  
   ['targetDetected']="Цель обнаружена"
   ['targetMovesToSpro']="Цель движется в направлении СПРО"
   

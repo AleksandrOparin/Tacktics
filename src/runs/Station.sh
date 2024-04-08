@@ -9,10 +9,12 @@ source src/helpers/Cp.sh
 source src/helpers/Json.sh
 source src/helpers/Math.sh
 source src/helpers/Other.sh
+source src/helpers/Ping.sh
 source src/helpers/Target.sh
 source src/helpers/Time.sh
 
 # Dtos
+source src/dtos/Process.sh
 source src/dtos/Target.sh
 
 
@@ -155,16 +157,36 @@ runStation() {
   local -n StationMap=$1
   local -n SPROMap=$2
   
-  # Проверяем, что станция еще не запущена
-  if (findByName "$PIDsFile" "${StationMap['name']}" true); then
+  # Сохраняем информацию о станции
+  writeToFileCheckName "$PIDsFile" "$(processToJSON "${StationMap['name']}")"
+  
+  # Получаем запись о станции
+  local stationData
+  stationData=$(findByName "$PIDsFile" "${StationMap['name']}")
+  
+  # Получаем поле, активна ли станция
+  local active
+  active=$(getFieldValue "$stationData" "active")
+  
+  # Если активна, то выходим
+  if [[ $active == "true" ]]; then
+    echo "${StationMap['name']} уже запущена"
     return
   fi
   
-  # Посылаем сообщение о том, что станция запущена
   echo "${StationMap['name']} запущена"
-  sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['stationActive']}"
+  
+  # Активируем отслеживание сообщений
+  handlePing "${StationMap['name']}" &
+  updateFieldInFileByName "$PIDsFile" "${StationMap['name']}" "workPid" "$!"
   
   while true; do
+    # Если станция не активна, то ничего не делаем
+    if [[ $active == "false" ]]; then
+      sleep 1
+      continue
+    fi
+    
     # Считываем цели
     declare -a files=()
     files=($(readGeneratedTargets))
@@ -173,6 +195,7 @@ runStation() {
     local filesExists=$?
     if [ $filesExists -eq 1 ]; then
       sleep 1
+      continue
     fi
 
     # Проходимся по каждой цели

@@ -5,9 +5,6 @@ source src/constants/Paths.sh
 source src/constants/Rls.sh
 source src/constants/Spro.sh
 
-# Dtos
-source src/dtos/Pid.sh
-
 # Helpers
 source src/helpers/Json.sh
 
@@ -16,4 +13,4 @@ source src/runs/Station.sh
 
 
 runStation RLS1 SPRO 2>/dev/null &
-writeToFileCheckName "$PIDsFile" "$(pidToJSON "${RLS1['name']}" "$!")"
+updateFieldInFileByName "$PIDsFile" "${RLS1['name']}" "pid" "$!"

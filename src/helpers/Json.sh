@@ -125,11 +125,11 @@ getFieldsFromFile() {
   fi
 
   # Извлекаем значения указанного ключа (по умолчанию ключа ID) из массива объектов JSON
-  local ids
-  ids=$(jq -r --arg field "$field" '.[] | .[$field]' "$file")
+  local fields
+  fields=$(jq -r --arg field "$field" '.[] | .[$field]' "$file")
 
   # Возвращаем значения, разделенные пробелом
-  echo "$ids"
+  echo "$fields"
 }
 
 
@@ -166,6 +166,38 @@ updateFieldInFileByID() {
   return 0
 }
 
+# Функция обновляет значение поля по name в файле формата JSON
+# Возвращает 1, если не удалось обновить поле
+# Возвращает 0, если удалось обновить поле
+updateFieldInFileByName() {
+  local file="$1"
+  local name="$2"
+  local fieldName="$3"
+  local fieldValue="$4"
+
+  # Проверяем, есть ли запись с таким name
+  findByName "$file" "$name" true
+  local found=$?
+  
+  if [ $found -ne 0 ]; then
+    return 1
+  fi
+
+  # Если запись найдена, обновляем поле
+  local updatedData
+  updatedData=$(jq --arg name "$name" --arg fieldName "$fieldName" --arg fieldValue "$fieldValue" \
+    'map(if .name == $name then .[$fieldName] = $fieldValue else . end)' "$file")
+  local updated=$?
+  
+  if [ $updated -ne 0 ]; then
+    return 1
+  fi
+  
+  # Сохраняем обновленные данные обратно в файл
+  echo "$updatedData" > "$file"
+  
+  return 0
+}
 
 # Функция возвращает содержимое некоторого поля в строке формата JSON
 # Возвращает 1, если были переданы не все поля, поля с таким именем нет или значение пустое

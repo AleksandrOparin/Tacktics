@@ -5,11 +5,15 @@ source src/constants/Cp.sh
 source src/constants/Messages.sh
 source src/constants/Paths.sh
 
+# Dtos
+source src/dtos/Process.sh
+
 # Helpers
 source src/helpers/Cp.sh
 source src/helpers/Db.sh
 source src/helpers/Format.sh
 source src/helpers/Json.sh
+source src/helpers/Ping.sh
 source src/helpers/Time.sh
 
 
@@ -20,6 +24,13 @@ runCP() {
   if (findByName "$PIDsFile" "${CP['name']}" true); then
     return
   fi
+  
+  # Сохраняем информацию о станции
+  writeToFile "$PIDsFile" "$(processToJSON "${CP['name']}" "" "" "true")" "name"
+  
+  # Активируем отправку сообщений
+  ping &
+  updateFieldInFileByName "$PIDsFile" "${CP['name']}" "workPid" "$!"
   
   # Цикл для непрерывного чтения файлов
   while true; do
