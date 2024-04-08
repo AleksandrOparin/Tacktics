@@ -19,8 +19,6 @@ source src/helpers/Time.sh
 ping() {
   local file="$PIDsFile"
   
-#  declare -a 
-  
   while true; do
     local cpProcessData
     cpProcessData=$(findByName "$file" "${CP['name']}")
@@ -34,7 +32,7 @@ ping() {
     
     # Устанавливаем статус опроса
     updateFieldInFileByName "$file" "${CP['name']}" "pending" "true"
-    sleep 1
+    sleep 2
     
     # Проходимся по именам станций
     local stationName
@@ -67,22 +65,11 @@ ping() {
         updateFieldInFileByName "$file" "$stationName" "active" "true"
         sendDataToCP "$stationName" "$(getTime)" "${Messages['stationActive']}"
       fi
-
-      
-#      # Проверяем ответила ли станция
-#      if [[ $pending == "true" ]]; then
-#        updateFieldInFileByName "$file" "$stationName" "active" "true"
-#        sendDataToCP "$stationName" "$(getTime)" "${Messages['stationActive']}"
-#      else
-#        updateFieldInFileByName "$file" "$stationName" "active" "false"
-#        sendDataToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
-#      fi
     done
 
     # Сбрасывем статус опроса
-    sleep 1
     updateFieldInFileByName "$file" "${CP['name']}" "pending" "false"
-    sleep 10
+    sleep 18
   done
 }
 
@@ -117,7 +104,6 @@ handlePing() {
         continue
       fi
       
-      # Выставляем поле pending у станции
       updateFieldInFileByName "$file" "$name" "pending" "true"
     else
       updateFieldInFileByName "$file" "$name" "pending" "false"

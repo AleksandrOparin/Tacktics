@@ -15,22 +15,19 @@ source src/helpers/Json.sh
 bash db/CreateDb.sh
 
 
+# Запускаем РЛС
+bash src/scripts/starts/rls/Rls1.sh
+sleep 0.8
+bash src/scripts/starts/rls/Rls2.sh
+sleep 0.8
+bash src/scripts/starts/rls/Rls3.sh
+sleep 0.8
+
+
 # Запускаем КП
 bash src/scripts/starts/Cp.sh
 
 
-sleep 0.5
-
-
-# Запускаем РЛС
-#bash src/scripts/starts/rls/Rls1.sh
-#sleep 0.5
-bash src/scripts/starts/rls/Rls2.sh
-sleep 0.5
-#bash src/scripts/starts/rls/Rls3.sh
-#sleep 0.5
-#
-#
 ## Запускаем СПРО
 #bash src/scripts/starts/Spro.sh
 #sleep 1.4
@@ -44,9 +41,9 @@ sleep 0.5
 #bash src/scripts/starts/zrdn/Zrdn3.sh
 
 
-#sleep 0.5
+sleep 1
 
 
 # Запускаем генерацию целей
-#./GenTargets.sh &
-#writeToFileCheckName "$PIDsFile" "$(pidToJSON "${GenTargets['name']}" "$!")"
+./GenTargets.sh &
+writeToFileCheckName "$PIDsFile" "$(processToJSON "${GenTargets['name']}" "" "$!" "true")"

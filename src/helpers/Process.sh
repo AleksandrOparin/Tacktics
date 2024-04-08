@@ -23,8 +23,6 @@ stopProcesses() {
   for workPid in "${workPids[@]}"; do
     kill "$workPid"
   done
-  
-  true >"$PIDsFile"
 }
 
 stopProcessByName() {

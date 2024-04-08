@@ -26,7 +26,7 @@ runCP() {
   fi
   
   # Сохраняем информацию о станции
-  writeToFile "$PIDsFile" "$(processToJSON "${CP['name']}" "" "" "true")" "name"
+  writeToFileCheckName "$PIDsFile" "$(processToJSON "${CP['name']}" "" "" "true")" "name"
   
   # Активируем отправку сообщений
   ping &

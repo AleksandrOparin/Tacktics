@@ -163,17 +163,17 @@ runStation() {
   # Получаем запись о станции
   local stationData
   stationData=$(findByName "$PIDsFile" "${StationMap['name']}")
-  
+
   # Получаем поле, активна ли станция
   local active
   active=$(getFieldValue "$stationData" "active")
-  
+
   # Если активна, то выходим
   if [[ $active == "true" ]]; then
     echo "${StationMap['name']} уже запущена"
     return
   fi
-  
+
   echo "${StationMap['name']} запущена"
   
   # Активируем отслеживание сообщений
@@ -181,8 +181,15 @@ runStation() {
   updateFieldInFileByName "$PIDsFile" "${StationMap['name']}" "workPid" "$!"
   
   while true; do
-    # Если станция не активна, то ничего не делаем
-    if [[ $active == "false" ]]; then
+    # Получаем информацию о станции
+    local newStationData
+    newStationData=$(findByName "$PIDsFile" "${StationMap['name']}")
+    
+    # Получаем поле, активна ли станция
+    local newActive
+    newActive=$(getFieldValue "$newStationData" "active")
+    
+    if [[ $newActive == "false" ]]; then
       sleep 1
       continue
     fi

@@ -13,4 +13,5 @@ source src/runs/Station.sh
 
 
 runStation RLS1 SPRO 2>/dev/null &
+sleep 0.2
 updateFieldInFileByName "$PIDsFile" "${RLS1['name']}" "pid" "$!"
