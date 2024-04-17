@@ -11,7 +11,11 @@ export AllLogsFile="${LogsDir}/All.log"
 
 # Messages
 export MessagesDir="messages"
-export CPMessagesDir="${MessagesDir}/ToCP"
+export CPRequestDir="${MessagesDir}/RequestFromCP"
+export CPResponseDir="${MessagesDir}/ResponseToCP"
+export CPTargetsDir="${MessagesDir}/TargetsToCP"
+
+export CPRequestFile="${CPRequestDir}/Ping.txt"
 
 
 # Temp
@@ -28,5 +32,7 @@ export TargetsDir="${GenTargetsDir}/Targets"
 export DestroyDir="${GenTargetsDir}/Destroy"
 
 
-# PIDs
-export PIDsFile="${TempDir}/PIDs.json"
+# Stations
+export StationInfoDir="${TempDir}/StationInfo"
+export StationsFile="${TempDir}/Stations.json"
+

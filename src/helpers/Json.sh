@@ -223,3 +223,19 @@ getFieldValue() {
   echo "$fieldValue"
   return 0
 }
+
+
+addField() {
+  local jsonData=$1
+  local field=$2
+  local value=$3
+  
+  echo "$jsonData" | jq --arg field "$field" --arg value "$value" '. + {($field): $value}'
+}
+
+removeField() {
+  local jsonData=$1
+  local field=$2
+  
+  echo "$jsonData" | jq "del(.\"$field\")"
+}

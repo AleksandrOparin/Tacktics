@@ -7,39 +7,56 @@ source src/constants/Paths.sh
 source src/helpers/Json.sh
 
 
-stopProcesses() {
-  local pids=()
-  pids=($(getFieldsFromFile "$PIDsFile" "pid"))
-  
-  local pid
-  for pid in "${pids[@]}"; do
-    kill "$pid"
-  done
-  
-  local workPids=()
-  workPids=($(getFieldsFromFile "$PIDsFile" "workPid"))
-  
-  local workPid
-  for workPid in "${workPids[@]}"; do
-    kill "$workPid"
-  done
-}
-
-stopProcessByName() {
-  local name=$1
+stopStation() {
+  local -n StationMap=$1
   
   # Находим запись по имени станции
   local jsonData
-  jsonData=$(findByName "$PIDsFile" "$name")
+  jsonData=$(findByName "${StationMap['stationFile']}" "${StationMap['name']}")
   
   # Получаем PID-ы
-  local pid workPid
+  local pingPid pid
+  pingPid=$(getFieldValue "$jsonData" "pingPid")
   pid=$(getFieldValue "$jsonData" "pid")
-  workPid=$(getFieldValue "$jsonData" "workPid")
   
-  kill "$pid"
-  kill "$workPid"
-  removeFromFile "$PIDsFile" "name" "$name"
+  if [[ -n $pingPid ]]; then
+    kill "$pingPid"
+  fi
+  
+  if [[ -n $pid ]]; then
+    kill "$pid"
+  fi
+  
+  rm "${StationMap['stationFile']}"
+}
+
+stopStations() {
+  local stationsFile stationInfoDirectory
+  stationsFile="${StationsFile:?}"
+  stationInfoDirectory="${StationInfoDir:?}"
+  
+  local pids=()
+  pids=($(getFieldsFromFile "$stationsFile" "pid"))
+  
+  local pid
+  for pid in "${pids[@]}"; do
+    if [[ -n $pid ]]; then
+      kill "$pid"
+    fi
+  done
+  
+  local pingPids=()
+  pingPids=($(getFieldsFromFile "$stationsFile" "pingPid"))
+  
+  local pingPid
+  for pingPid in "${pingPids[@]}"; do
+    if [[ -n $pingPid ]]; then
+      kill "$pingPid"
+    fi
+  done
+  
+  rm "$stationInfoDirectory"/*.json
+  rm "$stationsFile"
 }
 
 stop() {

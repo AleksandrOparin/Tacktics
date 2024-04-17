@@ -1,19 +1,48 @@
 #!/bin/bash
 
-# Credentials
-source src/Credentials.sh
-
 # Constants
+source src/constants/Cp.sh
 source src/constants/Paths.sh
 
 # Dtos
 source src/dtos/Message.sh
+source src/dtos/Station.sh
 
 # Helpers
+source src/helpers/Code.sh
+source src/helpers/Json.sh
 source src/helpers/Random.sh
 
 
-sendDataToCP() {
+sendTextToCP() {
+  local directory=$1
+  local text=$2
+  
+  # Шифруем данные
+  local encodedText
+  encodedText=$(encodeText "$text")
+  
+  # Создаем файл
+  local file
+  file="$directory/$(generateRandomSequence)"
+    
+  # Записываем в него зашифрованные данные и контрольную сумму
+  echo "$encodedText" > "$file"
+}
+
+sendMessageToCP() {
+  local stationName=$1
+  local detectedTime=$2
+  local messageText=$3
+
+  local jsonData
+  jsonData=$(messageToJSON "$stationName" "$detectedTime" "$messageText")
+    
+  # Отправляем данные
+  sendTextToCP "${CPTargetsDir:?}" "$jsonData"
+}
+
+sendTargetToCP() {
   local stationName=$1
   local detectedTime=$2
   local messageText=$3
@@ -24,45 +53,51 @@ sendDataToCP() {
   
   local jsonData
   jsonData=$(messageToJSON "$stationName" "$detectedTime" "$messageText" "$targetId" "$targetType" "$targetX" "$targetY")
-  
-  # Шифруем данные
-  local encryptedData
-  encryptedData=$(echo "$jsonData" | openssl enc -aes-256-cbc -e -a -pbkdf2 -iter "$ItersCount" -k "$Password")
-  
-  # Вычисляем контрольную сумму зашифрованных данных
-  local checksum
-  checksum=$(echo -n "$encryptedData" | md5sum | awk '{print $1}')
-  
-  # Создаем файл
-  local file
-  file="$CPMessagesDir/$(generateRandomSequence)"
     
-  # Записываем в него зашифрованные данные и контрольную сумму
-  echo "$encryptedData$checksum" > "$file"
+  # Отправляем данные
+  sendTextToCP "${CPTargetsDir:?}" "$jsonData"
 }
 
-decryptDataFromPC() {
-  local file=$1
+sendResponseToCP() {
+  local type=$1
+  local jsonData=$2
   
-  local encryptedDataWithChecksum
-  encryptedDataWithChecksum=$(cat "$file")
+  # Добавляем поле type к данным
+  jsonData=$(addField "$jsonData" "type" "$type")
   
-  # Читаем зашифрованные данные и контрольную сумму
-  local checksum encryptedData
-  checksum=${encryptedDataWithChecksum: -32}
-  encryptedData=${encryptedDataWithChecksum%"$checksum"}
-  
-  # Проверяем контрольную сумму
-  local calculatedChecksum
-  calculatedChecksum=$(echo -n "$encryptedData" | md5sum | awk '{print $1}')
-  if [[ "$calculatedChecksum" != "$checksum" ]]; then
-      return 1
-  fi
-  
-  # Декодируем данные
-  local jsonData
-  jsonData=$(echo "$encryptedData" | openssl enc -aes-256-cbc -d -a -pbkdf2 -iter "$ItersCount" -k "$Password")
+  sendTextToCP "${CPResponseDir:?}" "$jsonData"
+}
 
-  # Возвращаем данные
-  echo "$jsonData"
+sendPingToCP() {
+  local stationName=$1
+  local pingPid=${2:-''}
+  local pid=${3:-''}
+  
+  local jsonData
+  jsonData=$(stationToJSON "$stationName" "$pingPid" "$pid")
+    
+  # Отправляем данные
+  sendResponseToCP "${CPResponseTypes['ping']}" "$jsonData"
+}
+
+sendUpdateToCP() {
+  local stationFile=$1
+  local stationName=$2
+  
+  local stationData
+  stationData=$(findByName "$stationFile" "$stationName")
+    
+  # Отправляем данные
+  sendResponseToCP "${CPResponseTypes['update']}" "$stationData"
+}
+
+sendDeleteToCP() {
+  local stationFile=$1
+  local stationName=$2
+  
+  local stationData
+  stationData=$(findByName "$stationFile" "$stationName")
+    
+  # Отправляем данные
+  sendResponseToCP "${CPResponseTypes['delete']}" "$stationData"
 }

@@ -7,8 +7,12 @@ source src/constants/Paths.sh
 rm "${LogsDir:?}"/*.log 2>/dev/null  # Удаляем временные log файлы
 
 
-rm "${CPMessagesDir:?}"/* 2>/dev/null # Удаляем сообщения для КП
+rm "${CPRequestDir:?}"/* 2>/dev/null  #
+rm "${CPResponseDir:?}"/* 2>/dev/null #
+rm "${CPTargetsDir:?}"/* 2>/dev/null  #
 
+
+rm "${TempDir:?}"/StationInfo/*.json 2>/dev/null
 
 rm "${TempDir:?}"/*.json 2>/dev/null # Удаляем временные json файлы
 rm "${TempDir:?}"/*.txt 2>/dev/null  # Удаляем временные txt файлы

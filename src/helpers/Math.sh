@@ -104,29 +104,29 @@ isWillCross() {
   
   # Расчет направления движения и проверка, удаляется ли объект от центра
   local dx dy dxCenter dyCenter dotProduct
-  dx=$(bc -l <<< "scale=$scale; $x2 - $x1")
-  dy=$(bc -l <<< "scale=$scale; $y2 - $y1")
-  dxCenter=$(bc -l <<< "scale=$scale; $xCenter - $x1")
-  dyCenter=$(bc -l <<< "scale=$scale; $yCenter - $y1")
-  dotProduct=$(bc -l <<< "scale=$scale; $dx * $dxCenter + $dy * $dyCenter")
+  dx=$(echo "scale=$scale; $x2 - $x1" | bc -l)
+  dy=$(echo "scale=$scale; $y2 - $y1" | bc -l)
+  dxCenter=$(echo "scale=$scale; $xCenter - $x1" | bc -l)
+  dyCenter=$(echo "scale=$scale; $yCenter - $y1" | bc -l)
+  dotProduct=$(echo "scale=$scale; $dx * $dxCenter + $dy * $dyCenter" | bc -l)
 
   # Если dotProduct < 0, объект движется от центра
-  if (( $(bc -l <<< "$dotProduct < 0") )); then
+  if (( $(echo "$dotProduct < 0" | bc -l) )); then
     return 1
   fi
   
   # Расчет коэффициентов прямой
   local k b
-  k=$(bc -l <<< "scale=$scale; ($dy) / ($dx)")
-  b=$(bc -l <<< "scale=$scale; $y1 - $k * $x1")
+  k=$(echo "scale=$scale; ($dy) / ($dx)" | bc -l)
+  b=$(echo "scale=$scale; $y1 - $k * $x1" | bc -l)
   
   # Расчет расстояния от центра окружности до прямой
   local distance
-  distance=$(bc -l <<< "scale=$scale; ($k * $xCenter - $yCenter + $b) / sqrt($k * $k + 1)")
+  distance=$(echo "scale=$scale; ($k * $xCenter - $yCenter + $b) / sqrt($k * $k + 1)" | bc -l)
   distance=${distance#-} # Взять модуль значения
   
   # Проверка, меньше ли расстояние, чем радиус
-  if (( $(bc -l <<< "$distance <= $radius") )); then
+  if (( $(echo "$distance <= $radius" | bc -l) )); then
     return 0
   else
     return 1

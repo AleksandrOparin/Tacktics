@@ -7,8 +7,10 @@ source src/constants/Paths.sh
 
 # Dtos
 source src/dtos/Process.sh
+source src/dtos/Station.sh
 
 # Helpers
+source src/helpers/Code.sh
 source src/helpers/Cp.sh
 source src/helpers/Db.sh
 source src/helpers/Format.sh
@@ -18,37 +20,48 @@ source src/helpers/Time.sh
 
 
 runCP() {  
-  local directory=$CPMessagesDir
+  local directory="${CPTargetsDir:?}"
   
-  # Проверяем, что КП еще не запущен
-  if (findByName "$PIDsFile" "${CP['name']}" true); then
+  # Проверяем, запущен ли КП
+  if [[ -e "${CP['stationFile']}" ]]; then
+    echo "${CP['name']} уже запущена"
     return
+  else
+    echo "${CP['name']} запущен"
   fi
   
-  # Сохраняем информацию о станции
-  writeToFileCheckName "$PIDsFile" "$(processToJSON "${CP['name']}" "" "" "true")" "name"
-  
-  # Активируем отправку сообщений
+  # Активируем отправку сообщений и запоминаем PID
   ping &
-  updateFieldInFileByName "$PIDsFile" "${CP['name']}" "workPid" "$!"
+  local stationPingPid="$!"
   
+  # Сохраняем информацию о том, что КП запущен
+  writeToFileCheckName "${CP['stationFile']}" "$(stationToJSON "${CP['name']}" "$stationPingPid")"
+  writeToFileCheckName "${StationsFile:?}" "$(stationToJSON "${CP['name']}" "$stationPingPid")"
+
   # Цикл для непрерывного чтения файлов
   while true; do
+    # Проверяем, запущен ли КП
+    if [[ ! -e "${CP['stationFile']}" ]]; then
+      sleep 0.5
+      continue
+    fi
+        
     # Объявляем массив файлов и считываем их
     declare -a files=()
-    files=($(ls -rt "$directory"))
-  
+    files=($(ls -lt "$directory"))
+      
     # Перебираем файлы
     local file
     for file in "${files[@]}"; do
       if [ -f "$directory/$file" ]; then
         # Обработка данных
         local jsonData
-        jsonData=$(decryptDataFromPC "$directory/$file")
+        jsonData=$(decodeTextFromFile "$directory/$file")
         local isDecrypted=$?
         
+        # Отправляем сообщение о НСД
         if [ $isDecrypted -eq 1 ]; then
-          insertMessageInDB "${Messaages['unknown']}" "$(getTime)" "${Messaages['unauthorizedAccess']}"
+          insertMessageInDB "${Messages['unknown']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
           continue
         fi
         
@@ -64,15 +77,14 @@ runCP() {
         
         # Добавляем запись в БД и в логи
         insertMessageInDB "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY"
-        format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "$AllLogsFile"
-        format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "${LogsDir}/${stationName}.log"
-
-                
+        format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "${AllLogsFile:?}"
+        format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "${LogsDir:?}/${stationName}.log"
+     
         # Удаляем файл после обработки
         rm "$directory/$file"
       fi
     done
-
+    
     sleep 0.5
   done
 }

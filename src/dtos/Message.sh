@@ -13,10 +13,10 @@ messageToJSON() {
   local stationName=$1
   local detectedTime=$2
   local messageText=$3
-  local targetId=$4
-  local targetType=$5
-  local targetX=$6
-  local targetY=$7
+  local targetId=${4:-''}
+  local targetType=${5:-''}
+  local targetX=${6:-''}
+  local targetY=${7:-''}
   
   jq -n \
   --arg stationName "$stationName" \

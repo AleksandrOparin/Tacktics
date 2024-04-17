@@ -1,114 +1,209 @@
 #!/bin/bash
 
+# Credentials
+source src/Credentials.sh
+
 # Constants
 source src/constants/Cp.sh
 source src/constants/Messages.sh
 source src/constants/Paths.sh
 source src/constants/Variables.sh
 
-# Dtos
-source src/dtos/Process.sh
-
 # Helpers
+source src/helpers/Code.sh
 source src/helpers/Cp.sh
 source src/helpers/Json.sh
+source src/helpers/Other.sh
 source src/helpers/Time.sh
 
 
-# Функция посылает сообщения
 ping() {
-  local file="$PIDsFile"
+  local responseDirectory="${CPResponseDir:?}"
+  local requestFile="${CPRequestFile:?}"
   
-  while true; do
-    local cpProcessData
-    cpProcessData=$(findByName "$file" "${CP['name']}")
-    local isCpFounded=$?
+  local stationsFile="${StationsFile:?}"
     
-    # Если не нашли запись о КП
-    if [ $isCpFounded -ne 0 ]; then
-      sleep 1
+  while true; do
+    # Проверяем, если файл с пингом
+    if [ -e "$requestFile" ]; then
       continue
     fi
-    
-    # Устанавливаем статус опроса
-    updateFieldInFileByName "$file" "${CP['name']}" "pending" "true"
-    sleep 2
-    
-    # Проходимся по именам станций
-    local stationName
-    for stationName in "${AllStationNames[@]}"; do
-      # Ищем станцию в файле JSON по имени
-      local stationData
-      stationData=$(findByName "$file" "$stationName")
-      local exists=$?
 
-      # Если не нашли
-      if [ "$exists" -eq 1 ]; then
-        writeToFileCheckName "$file" "$(processToJSON "$stationName")"
-        sendDataToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
-        continue
-      fi
+    # Кодируем текст пинга
+    local encodedText
+    encodedText=$(encodeText "${CPCheckText:?}")
 
-      # Получаем поле, содержащее ответ
-      local active pending
-      active=$(getFieldValue "$stationData" "active")
-      pending=$(getFieldValue "$stationData" "pending")
-      
-      # Станция была активна и сейчас не ответила
-      if [[ $active == "true" && $pending == "false" ]]; then
-        updateFieldInFileByName "$file" "$stationName" "active" "false"
-        sendDataToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
-      fi
-      
-      # Станция была не активна и сейчас ответила
-      if [[ $active == "false" && $pending == "true" ]]; then
-        updateFieldInFileByName "$file" "$stationName" "active" "true"
-        sendDataToCP "$stationName" "$(getTime)" "${Messages['stationActive']}"
+    # Создаем файл пинга
+    echo "$encodedText" > "$requestFile"
+
+    # Ждем ответа станций
+    sleep 1
+    
+    # Получаем файлы из директории с ответами
+    declare -a files=()
+    files=($(ls -lt "$responseDirectory" | awk '{print $9}'))
+    
+    local allStationNames=()
+    allStationNames=("${AllStationNames[@]}")
+    
+    echo "1 - ${allStationNames[@]}" >> logs/log.log
+    
+    # Проходимся по каждому файлу
+    local file
+    for file in "${files[@]}"; do
+      if [ -f "$responseDirectory/$file" ]; then
+        # Обработка данных
+        local responseData
+        responseData=$(decodeTextFromFile "$responseDirectory/$file")
+        local isDecoded=$?
+
+        # Отправляем сообщение о НСД
+        if [ $isDecoded -eq 1 ]; then
+          sendMessageToCP "${Messages['ping']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
+          continue
+        fi        
+        
+        handleResponseType "$responseData"
+        
+        # Удаляем рассмотренный файл
+        rm "$responseDirectory/$file"
+        
+        local type stationName
+        type=$(getFieldValue "$responseData" "type")
+        stationName=$(getFieldValue "$responseData" "name")
+        
+        echo "get - $stationName" >> logs/log.log
+        
+        # Удаляем из массива со всеми станциями текущую
+        if [[ $type == "${CPResponseTypes['ping']}" ]]; then
+          echo "get remove type - $type" >> logs/log.log
+          
+          allStationNames=($(removeInArray "$stationName" "${allStationNames[@]}"))
+          
+          echo "get and remove - ${allStationNames[@]}" >> logs/log.log
+        fi
+        
       fi
     done
-
-    # Сбрасывем статус опроса
-    updateFieldInFileByName "$file" "${CP['name']}" "pending" "false"
-    sleep 18
+    
+    cat "$stationsFile" >> logs/log.log
+        
+    local name
+    for name in "${allStationNames[@]}"; do
+      echo "remove - $name" >> logs/log.log
+      
+      # Ищем запись о станции в сохраненном файле
+      findByName "$stationsFile" "$name" true
+      local isFind=$?
+      
+      # Если нашли запись
+      if [[ $isFind -eq 0 ]]; then
+        echo "remove and find - $name" >> logs/log.log
+        
+        # Удаляем информацию о станции из файла
+        removeFromFile "$stationsFile" "name" "$name"
+        
+        # Отправляем сообщение на КП о том, что станция не активна
+        sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
+      fi
+    done
+    
+    # Удаляем файл пинга
+    rm "$requestFile"
+    
+    sleep 20
   done
 }
 
-# Функция отслеживает сообщения
 handlePing() {
-  local name=$1 # Имя станции
+  local stationName=$1
+  local stationPingPid=${2:-''}
+  local stationPid=${3:-''}
   
-  local file="$PIDsFile"
+  local requestFile="${CPRequestFile:?}"
+  
+  # Флаг
+  local isFirst="true"
   
   while true; do
-    local cpProcessData
-    cpProcessData=$(findByName "$file" "${CP['name']}")
-    local isCpFounded=$?
+    if [ -e "$requestFile" ]; then
+      if [[ $isFirst == "false" ]]; then
+        sleep 0.5
+        continue
+      fi
+    else
+      isFirst="true"
+    fi
     
-    # Если не нашли запись о КП
-    if [ $isCpFounded -ne 0 ]; then
+    # Декодируем текст в файле
+    local decodedText
+    decodedText=$(decodeTextFromFile "$requestFile")
+    local isDecoded=$?
+    
+    # Если не удалось декодировать 
+    if [[ $isDecoded -eq 1 ]]; then
       sleep 0.5
       continue
     fi
     
-    local pending
-    pending=$(getFieldValue "$cpProcessData" "pending")
-    
-    if [[ $pending == "true" ]]; then
-      local stationProcessData
-      stationProcessData=$(findByName "$file" "$name")
-      local isStationFounded=$?
-      
-      # Если не нашли запись о станции
-      if [ $isStationFounded -ne 0 ]; then
-        sleep 0.5
-        continue
-      fi
-      
-      updateFieldInFileByName "$file" "$name" "pending" "true"
+    # Проверяем, что полученый текст совпал с ожидаемым
+    if [[ $decodedText == "${CPCheckText:?}" ]]; then
+      # Отправляем данные о станции
+      sendPingToCP "$stationName" "$stationPingPid" "$stationPid"
     else
-      updateFieldInFileByName "$file" "$name" "pending" "false"
+      # Отправляем сообщение о НСД
+      sendMessageToCP "$stationName" "$(getTime)" "${Messages['unauthorizedAccess']}"
     fi
-    
+
+    isFirst="false"
+
     sleep 0.5
   done
+}
+
+handleResponseType() {
+  local responseData=$1
+  
+  local stationsFile="${StationsFile:?}"
+  
+  # Извлекаем данные из JSON
+  local type stationName
+  type=$(getFieldValue "$responseData" "type")
+  stationName=$(getFieldValue "$responseData" "name")
+  
+  case ${type} in
+    "${CPResponseTypes['ping']}" ) # Если тип сообщения ping
+      echo "Ping" >> logs/log.log
+    
+      # Ищем запись о станции в сохраненном файле
+      findByName "$stationsFile" "$stationName" true
+      local isFind=$?
+      
+      # Если не нашли запись
+      if [[ $isFind -eq 1 ]]; then
+        local writeData
+        writeData=$(removeField "$responseData" "type")
+        
+        # Записываем данные в файл
+        writeToFileCheckName "$stationsFile" "$writeData"
+        
+         # Отправляем сообщение на КП о том, что станция активна
+        sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationActive']}"
+      fi
+    ;;
+    "${CPResponseTypes['update']}" ) # Если тип сообщения update
+      echo "Update" >> logs/log.log
+    
+      local pingPid pid
+      pingPid=$(getFieldValue "$responseData" "pingPid")
+      pid=$(getFieldValue "$responseData" "pid")
+
+      updateFieldInFileByName "$stationsFile" "$stationName" "pingPid" "$pingPid"
+      updateFieldInFileByName "$stationsFile" "$stationName" "pid" "$pid"
+    ;;
+    "${CPResponseTypes['delete']}" ) # Если тип сообщения delete
+      echo "Delete" >> logs/log.log
+    
+#      removeFromFile "$stationsFile" "name" "$stationName"
+  esac
 }

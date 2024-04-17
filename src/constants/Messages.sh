@@ -14,7 +14,9 @@ declare -A Messages=(
   ['targetDestroyed']="Цель уничтожена"
   
   ['unknown']="Неизвесто"
-  ['unauthorizedAccess']="Не совпадают контрольные суммы, попытка НСД!"
+  ['unauthorizedAccess']="Не совпадают к. с., попытка НСД!"
+  
+  ['ping']="Пинг"
 )
   
 export Messages

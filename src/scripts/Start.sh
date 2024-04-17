@@ -1,15 +1,5 @@
 #!/bin/bash
 
-# Constants
-source src/constants/GenTargets.sh
-source src/constants/Paths.sh
-
-# Dtos
-source src/dtos/Process.sh
-
-# Helpers
-source src/helpers/Json.sh
-
 
 # Создаем БД
 bash db/CreateDb.sh
@@ -17,28 +7,28 @@ bash db/CreateDb.sh
 
 # Запускаем РЛС
 bash src/scripts/starts/rls/Rls1.sh
-sleep 0.2
+sleep 0.4
 bash src/scripts/starts/rls/Rls2.sh
-sleep 0.2
+sleep 0.4
 bash src/scripts/starts/rls/Rls3.sh
-sleep 0.2
+sleep 0.4
 
 
 sleep 0.5
 
 
 # Запускаем СПРО
-bash src/scripts/starts/Spro.sh
-sleep 0.9
+#bash src/scripts/starts/Spro.sh
+#sleep 0.9
 
 
 # Запускаем ЗРДН
-bash src/scripts/starts/zrdn/Zrdn1.sh
-sleep 0.9
-bash src/scripts/starts/zrdn/Zrdn2.sh
-sleep 0.9
-bash src/scripts/starts/zrdn/Zrdn3.sh
-sleep 0.9
+#bash src/scripts/starts/zrdn/Zrdn1.sh
+#sleep 0.9
+#bash src/scripts/starts/zrdn/Zrdn2.sh
+#sleep 0.9
+#bash src/scripts/starts/zrdn/Zrdn3.sh
+#sleep 0.9
 
 
 # Запускаем КП
@@ -49,5 +39,4 @@ sleep 0.5
 
 
 # Запускаем генерацию целей
-./GenTargets.sh &
-writeToFileCheckName "$PIDsFile" "$(processToJSON "${GenTargets['name']}" "" "$!" "true")"
+bash src/scripts/starts/GenTargets.sh

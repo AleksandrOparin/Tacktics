@@ -140,12 +140,12 @@ runStation() {
 
     # Если цель не была обнаружена (не передавали о ней информацию), то передаем
     if [[ "$detected" == "false" ]]; then
-        sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDetected']}" "$id" "$type" "$x" "$y"
-
         # Если цель летит в сторону СПРО, то также сообщаем об этом
         if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPROMap['x']}" "${SPROMap['y']}" "${SPROMap['distance']}"); then
-            sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetMovesToSpro']}" "$id" "$type" "$x" "$y"
+            sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetMovesToSpro']}" "$id" "$type" "$x" "$y"
         fi
+        
+        sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDetected']}" "$id" "$type" "$x" "$y"
 
         # Обновляем поле цели и время обнаружения
         updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detected" true
@@ -157,40 +157,34 @@ runStation() {
   local -n StationMap=$1
   local -n SPROMap=$2
   
-  # Сохраняем информацию о станции
-  writeToFileCheckName "$PIDsFile" "$(processToJSON "${StationMap['name']}")"
-  
-  # Получаем запись о станции
-  local stationData
-  stationData=$(findByName "$PIDsFile" "${StationMap['name']}")
-
-  # Получаем поле, активна ли станция
-  local active
-  active=$(getFieldValue "$stationData" "active")
-
-  # Если активна, то выходим
-  if [[ $active == "true" ]]; then
+  # Проверяем, запущена ли станция
+  if [[ -e "${StationMap['stationFile']}" ]]; then
     echo "${StationMap['name']} уже запущена"
     return
+  else
+    echo "${StationMap['name']} запущена"
   fi
-
-  echo "${StationMap['name']} запущена"
   
-  # Активируем отслеживание сообщений
+  # Активируем отслеживание сообщений и запоминаем PID
   handlePing "${StationMap['name']}" &
-  updateFieldInFileByName "$PIDsFile" "${StationMap['name']}" "workPid" "$!"
+  local stationPingPid="$!"
+
+  # Сохраняем информацию о том, что станция запущена
+  writeToFileCheckName "${StationMap['stationFile']}" "$(stationToJSON "${StationMap['name']}" "$stationPingPid")"
   
+  # Цикл для непрерывного чтения файлов
   while true; do
-    # Получаем информацию о станции
-    local newStationData
-    newStationData=$(findByName "$PIDsFile" "${StationMap['name']}")
+#    # Проверяем, запущена ли станция
+#    if [[ ! -e "${StationMap['stationFile']}" ]]; then
+#      sleep 0.5
+#      continue
+#    fi
     
-    # Получаем поле, активна ли станция
-    local newActive
-    newActive=$(getFieldValue "$newStationData" "active")
-    
-    if [[ $newActive == "false" ]]; then
-      sleep 1
+    # Проверяем, запущена ли станция
+    findByName "${StationsFile:?}" "${StationMap['name']}" true
+    local isStationStarted=$!
+    if [[ $isStationStarted -eq 0 ]]; then
+      sleep 0.5
       continue
     fi
     
@@ -201,7 +195,7 @@ runStation() {
     # Проверяем существуют ли они
     local filesExists=$?
     if [ $filesExists -eq 1 ]; then
-      sleep 1
+      sleep 0.5
       continue
     fi
 

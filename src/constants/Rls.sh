@@ -24,7 +24,9 @@ declare -A RLS1=(
   ['distance']="${DneprRLS['distance']}"
   ['deviation']="${DneprRLS['deviation']}"
   ['targets']="Бал.блок"
+  
   ['jsonFile']="temp/RLS1.json"
+  ['stationFile']="temp/StationInfo/RLS1.json"
 )
 
 # Координаты + "Воронеж ДМ"
@@ -36,7 +38,9 @@ declare -A RLS2=(
   ['distance']="${VoronezhRLS['distance']}"
   ['deviation']="${VoronezhRLS['deviation']}"
   ['targets']="Бал.блок"
+  
   ['jsonFile']="temp/RLS2.json"
+  ['stationFile']="temp/StationInfo/RLS2.json"
 )
   
 # г.Омск + "Днепр"
@@ -48,7 +52,9 @@ declare -A RLS3=(
   ['distance']="${DneprRLS['distance']}"
   ['deviation']="${DneprRLS['deviation']}"
   ['targets']="Бал.блок"
+  
   ['jsonFile']="temp/RLS3.json"
+  ['stationFile']="temp/StationInfo/RLS3.json"
 )
 
 export RLS1 RLS2 RLS3

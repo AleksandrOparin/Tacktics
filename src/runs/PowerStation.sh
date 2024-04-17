@@ -139,7 +139,7 @@ runPowerStation() {
 
     # Если цель не была обнаружена (не передавали о ней информацию), то передаем
     if [[ "$detected" == "false" ]]; then
-        sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDetected']}" "$id" "$type" "$x" "$y"
+        sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDetected']}" "$id" "$type" "$x" "$y"
 
         # Обновляем поле цели, так как теперь она обнаружена
         updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detected" true
@@ -155,7 +155,7 @@ runPowerStation() {
     
     # Костыль, чтобы отправить всего 1 соообщение о том, что закончились снаряды
     if [ "$amount" -eq 0 ]; then
-      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['emptyAmount']}"
+      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['emptyAmount']}"
       ((amount--)) # Уменьшаем до -1
     fi
     
@@ -166,7 +166,7 @@ runPowerStation() {
     
     # Если осталось 5 снарядов
     if [ "$amount" -eq 5 ]; then
-      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['getAmount']}$amount"
+      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['getAmount']}$amount"
     fi
     
     # Данные текущей цели
@@ -179,7 +179,7 @@ runPowerStation() {
     
     # Поверяем выстрел
     if [ "$isShootInTarget" -eq 0 ]; then # Если стреляли ранее
-      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['missedTarget']}" "$id" "$type" "$x" "$y"
+      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['missedTarget']}" "$id" "$type" "$x" "$y"
       
       shootTargetsIDs=($(removeInArray "$id" "${shootTargetsIDs[@]}"))
     fi
@@ -189,7 +189,7 @@ runPowerStation() {
     ((amount--))
     writeToFile "${StationMap['shotFile']}" "$currentTargetData"
 
-    sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['shotAtTarget']}" "$id" "$type" "$x" "$y"
+    sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['shotAtTarget']}" "$id" "$type" "$x" "$y"
     
     ((shootsCount++))
   }
@@ -277,7 +277,7 @@ runPowerStation() {
       x=$(getFieldValue "$targetData" "x")
       y=$(getFieldValue "$targetData" "y")
       
-      sendDataToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDestroyed']}" "$targetID" "$type" "$x" "$y"
+      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDestroyed']}" "$targetID" "$type" "$x" "$y"
     done
     shootTargetsIDs=()
     

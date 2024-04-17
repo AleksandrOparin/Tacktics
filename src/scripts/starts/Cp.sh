@@ -12,5 +12,8 @@ source src/runs/Cp.sh
 
 
 runCP 2>/dev/null &
-sleep 0.2
-updateFieldInFileByName "$PIDsFile" "${CP['name']}" "pid" "$!"
+
+sleep 0.1
+
+updateFieldInFileByName "${CP['stationFile']}" "${CP['name']}" "pid" "$!"
+updateFieldInFileByName "${StationsFile:?}" "${CP['name']}" "pid" "$!"
