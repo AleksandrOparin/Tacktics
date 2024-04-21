@@ -50,12 +50,11 @@ ping() {
 
         # Записываем информацию о попытке НСД
         if [ $isDecoded -eq 1 ]; then
-          saveMessage "${Messages['ping']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
+          sendMessageToCP "${Messages['ping']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
           continue
         fi
         
         handleResponseType "$responseData"
-#        handlePingAbort # TODO: можно добавить проверку, что пинг не пришел, если станцию криво убили
         
         # Удаляем рассмотренный файл
         rm "$responseDirectory/$file"
@@ -139,7 +138,7 @@ handleResponseType() {
         writeData=$(removeField "$responseData" "type")
         
         # Записываем информацию о том, что станция активна
-        saveMessage "$stationName" "$(getTime)" "${Messages['stationActive']}"
+        sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationActive']}"
         
         # Записываем данные в файл
         writeToFileCheckName "$stationsFile" "$writeData"
@@ -162,6 +161,6 @@ handleResponseType() {
       removeFromFile "$stationsFile" "name" "$stationName"
       
       # Записываем информацию о том, что станция не активна
-      saveMessage "$stationName" "$(getTime)" "${Messages['stationDisable']}"
+      sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
   esac
 }

@@ -165,17 +165,11 @@ runStation() {
   writeToFileCheckName "${StationMap['stationFile']}" "$(stationToJSON "${StationMap['name']}" "$stationPingPid")"
   
   # Цикл для непрерывного чтения файлов
-  while true; do
-#    # Проверяем, запущена ли станция
-#    if [[ ! -e "${StationMap['stationFile']}" ]]; then
-#      sleep 0.5
-#      continue
-#    fi
-    
+  while true; do    
     # Проверяем, запущена ли станция
     findByName "${StationsFile:?}" "${StationMap['name']}" true
-    local isStationStarted=$!
-    if [[ $isStationStarted -eq 0 ]]; then
+    local isStationStarted=$?
+    if [[ $isStationStarted -eq 1 ]]; then
       sleep 0.5
       continue
     fi
@@ -197,7 +191,7 @@ runStation() {
       processTarget "$file"
     done
     
-    sleep .6
+    sleep .3
   done
 }
 

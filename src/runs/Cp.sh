@@ -47,7 +47,7 @@ runCP() {
         
     # Объявляем массив файлов и считываем их
     declare -a files=()
-    files=($(ls -lt "$directory"))
+    files=($(ls -rt "$directory"))
       
     # Перебираем файлы
     local file
