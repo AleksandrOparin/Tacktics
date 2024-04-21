@@ -12,7 +12,9 @@ while IFS='' read -r line; do
   # Разбиваем строку на массив, используя "|" в качестве разделителя
   IFS='|' read -r -a fields <<< "$line"
   
-  # Форматируем строки
+  # Форматируем каждую строку
   formattedRow=$(format "${fields[@]}")
+  
+  # Выводим каждую строку
   echo "$formattedRow"
-done < <(sqlite3 "$DBFile" "SELECT * FROM messages;")
+done < <(sqlite3 "${DBFile:?}" "SELECT * FROM messages;")

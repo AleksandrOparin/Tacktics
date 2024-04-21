@@ -2,10 +2,11 @@
 
 source src/constants/Paths.sh
 
+# Удаляем прошлую БД
+rm -rf "${DBFile:?}"
 
-rm -rf "$DBFile"
 
-
+# Создаем новую БД
 sqlite3 "$DBFile" <<EOF
 CREATE TABLE IF NOT EXISTS messages (
     stationName TEXT,
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS messages (
 EOF
 
 
+# Выводим сообщение о создании БД
 isCreated=$?
 if [ $isCreated -eq 0 ]; then
     echo "База данных успешно создана"
