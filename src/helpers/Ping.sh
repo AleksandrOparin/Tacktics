@@ -7,13 +7,11 @@ source src/Credentials.sh
 source src/constants/Cp.sh
 source src/constants/Messages.sh
 source src/constants/Paths.sh
-source src/constants/Variables.sh
 
 # Helpers
 source src/helpers/Code.sh
 source src/helpers/Cp.sh
 source src/helpers/Json.sh
-source src/helpers/Other.sh
 source src/helpers/Time.sh
 
 
@@ -50,11 +48,11 @@ ping() {
         responseData=$(decodeTextFromFile "$responseDirectory/$file")
         local isDecoded=$?
 
-        # Отправляем сообщение о НСД
+        # Записываем информацию о попытке НСД
         if [ $isDecoded -eq 1 ]; then
-          sendMessageToCP "${Messages['ping']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
+          saveMessage "${Messages['ping']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
           continue
-        fi        
+        fi
         
         handleResponseType "$responseData"
 #        handlePingAbort # TODO: можно добавить проверку, что пинг не пришел, если станцию криво убили
@@ -140,11 +138,11 @@ handleResponseType() {
         local writeData
         writeData=$(removeField "$responseData" "type")
         
+        # Записываем информацию о том, что станция активна
+        saveMessage "$stationName" "$(getTime)" "${Messages['stationActive']}"
+        
         # Записываем данные в файл
         writeToFileCheckName "$stationsFile" "$writeData"
-        
-        # Отправляем сообщение на КП о том, что станция активна
-        sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationActive']}"
       fi
     ;;
     "${CPResponseTypes['update']}" ) # Если тип сообщения update
@@ -163,7 +161,7 @@ handleResponseType() {
       # Удаляем информацию о станции из файла
       removeFromFile "$stationsFile" "name" "$stationName"
       
-      # Отправляем сообщение на КП о том, что станция не активна
-      sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
+      # Записываем информацию о том, что станция не активна
+      saveMessage "$stationName" "$(getTime)" "${Messages['stationDisable']}"
   esac
 }

@@ -10,6 +10,7 @@ source src/dtos/Station.sh
 
 # Helpers
 source src/helpers/Code.sh
+source src/helpers/Db.sh
 source src/helpers/Json.sh
 source src/helpers/Random.sh
 
@@ -100,4 +101,12 @@ sendDeleteToCP() {
     
   # Отправляем данные
   sendResponseToCP "${CPResponseTypes['delete']}" "$stationData"
+}
+
+
+saveMessage() {
+  local fields=("$@")
+  
+  insertMessageInDB "${fields[@]}"
+  format "${fields[@]}" >> "${AllLogsFile:?}"
 }

@@ -8,4 +8,4 @@ source src/constants/Spro.sh
 source src/runs/Station.sh
 
 
-runStationWithRegistration RLS2 SPRO 2>/dev/null &
+runStationWithRegistration RLS2 SPRO 2>/dev/null

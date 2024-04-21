@@ -32,15 +32,15 @@ checkInArray() {
 
 #
 removeInArray() {
-    local elementToRemove="$1"
-    shift
-    
-    local newArray=()
-    
-    local element
-    for element in "$@"; do
-        [[ "$element" != "$elementToRemove" ]] && newArray+=("$element")
-    done
-    
-    echo "${newArray[@]}"
+  local elementToRemove="$1"
+  shift
+  
+  local newArray=()
+  
+  local element
+  for element in "$@"; do
+    [[ "$element" != "$elementToRemove" ]] && newArray+=("$element")
+  done
+  
+  echo "${newArray[@]}"
 }

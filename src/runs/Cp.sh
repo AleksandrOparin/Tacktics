@@ -12,7 +12,6 @@ source src/dtos/Station.sh
 # Helpers
 source src/helpers/Code.sh
 source src/helpers/Cp.sh
-source src/helpers/Db.sh
 source src/helpers/Format.sh
 source src/helpers/Json.sh
 source src/helpers/Ping.sh
@@ -61,7 +60,7 @@ runCP() {
         
         # Отправляем сообщение о НСД
         if [ $isDecrypted -eq 1 ]; then
-          insertMessageInDB "${Messages['unknown']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
+          saveMessage "${Messages['unknown']}" "$(getTime)" "${Messages['unauthorizedAccess']}"
           continue
         fi
         
@@ -76,8 +75,7 @@ runCP() {
         targetY=$(getFieldValue "$jsonData" "targetY")
         
         # Добавляем запись в БД и в логи
-        insertMessageInDB "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY"
-        format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "${AllLogsFile:?}"
+        saveMessage "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY"
         format "$stationName" "$detectedTime" "$message" "$targetId" "$targetType" "$targetX" "$targetY" >> "${LogsDir:?}/${stationName}.log"
      
         # Удаляем файл после обработки
