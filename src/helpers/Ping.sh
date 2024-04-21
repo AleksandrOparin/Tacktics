@@ -127,8 +127,6 @@ handleResponseType() {
   
   case ${type} in
     "${CPResponseTypes['ping']}" ) # Если тип сообщения ping
-      echo "Ping" >> logs/log.log
-    
       # Ищем запись о станции в сохраненном файле
       findByName "$stationsFile" "$stationName" true
       local isFind=$?
@@ -146,8 +144,6 @@ handleResponseType() {
       fi
     ;;
     "${CPResponseTypes['update']}" ) # Если тип сообщения update
-      echo "Update" >> logs/log.log
-    
       local pingPid pid
       pingPid=$(getFieldValue "$responseData" "pingPid")
       pid=$(getFieldValue "$responseData" "pid")
@@ -156,8 +152,6 @@ handleResponseType() {
       updateFieldInFileByName "$stationsFile" "$stationName" "pid" "$pid"
     ;;
     "${CPResponseTypes['delete']}" ) # Если тип сообщения delete
-      echo "Delete" >> logs/log.log
-    
       # Удаляем информацию о станции из файла
       removeFromFile "$stationsFile" "name" "$stationName"
       
