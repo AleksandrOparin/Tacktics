@@ -14,6 +14,7 @@ source src/helpers/Target.sh
 source src/helpers/Time.sh
 
 # Dtos
+source src/dtos/Station.sh
 source src/dtos/Target.sh
 
 
@@ -153,20 +154,9 @@ runPowerStation() {
     local y=$3
     local type=$4
     
-    # Костыль, чтобы отправить всего 1 соообщение о том, что закончились снаряды
-    if [ "$amount" -eq 0 ]; then
-      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['emptyAmount']}"
-      ((amount--)) # Уменьшаем до -1
-    fi
-    
     # Если снарядов не осталось
     if [ "$amount" -le 0 ]; then
       return
-    fi
-    
-    # Если осталось 5 снарядов
-    if [ "$amount" -eq 5 ]; then
-      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['getAmount']}$amount"
     fi
     
     # Данные текущей цели
@@ -189,7 +179,13 @@ runPowerStation() {
     ((amount--))
     writeToFile "${StationMap['shotFile']}" "$currentTargetData"
 
-    sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['shotAtTarget']}" "$id" "$type" "$x" "$y"
+    sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['shotAtTarget']} ${amount}" "$id" "$type" "$x" "$y"
+    
+    # Костыль, чтобы отправить всего 1 соообщение о том, что закончились снаряды
+    if [ "$amount" -eq 0 ]; then
+      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['emptyAmount']}"
+      ((amount--)) # Уменьшаем до -1
+    fi
     
     ((shootsCount++))
   }
@@ -197,28 +193,12 @@ runPowerStation() {
   # Получаем ассоциативный массив значений станции
   local -n StationMap=$1
   
-  # Сохраняем информацию о станции
-  writeToFileCheckName "$PIDsFile" "$(processToJSON "${StationMap['name']}")"
-  
-  # Получаем запись о станции
-  local stationData
-  stationData=$(findByName "$PIDsFile" "${StationMap['name']}")
-
-  # Получаем поле, активна ли станция
-  local active
-  active=$(getFieldValue "$stationData" "active")
-
-  # Если активна, то выходим
-  if [[ $active == "true" ]]; then
-    echo "${StationMap['name']} уже запущена"
-    return
-  fi
-  
-  echo "${StationMap['name']} запущена"
-
   # Активируем отслеживание сообщений
   handlePing "${StationMap['name']}" &
-  updateFieldInFileByName "$PIDsFile" "${StationMap['name']}" "workPid" "$!"
+  local stationPingPid="$!"
+  
+  # Сохраняем информацию о том, что станция запущена
+  writeToFileCheckName "${StationMap['stationFile']}" "$(stationToJSON "${StationMap['name']}" "$stationPingPid")"
   
   local -a shootTargetsIDs=()
   local amount="${StationMap['amount']}"
@@ -226,16 +206,11 @@ runPowerStation() {
   local shootsCount=0
   
   while true; do
-    # Получаем информацию о станции
-    local newStationData
-    newStationData=$(findByName "$PIDsFile" "${StationMap['name']}")
-    
-    # Получаем поле, активна ли станция
-    local newActive
-    newActive=$(getFieldValue "$newStationData" "active")
-    
-    if [[ $newActive == "false" ]]; then
-      sleep 1
+    # Проверяем, запущена ли станция
+    findByName "${StationsFile:?}" "${StationMap['name']}" true
+    local isStationStarted=$?
+    if [[ $isStationStarted -eq 1 ]]; then
+      sleep 0.5
       continue
     fi
     
@@ -251,7 +226,8 @@ runPowerStation() {
     # Проверяем существуют ли они
     local filesExists=$?
     if [ $filesExists -eq 1 ]; then
-      sleep 1
+      sleep 0.5
+      continue
     fi
     
     # Получаем все ID целей, по которым стреляли в прошлом цикле
@@ -283,4 +259,29 @@ runPowerStation() {
     
     sleep .8
   done
+}
+
+runPowerStationWithRegistration() {
+  # Получаем ассоциативные массивы значений станции и СПРО
+  local -n StationMapNew=$1
+  
+  # Проверяем, запущена ли станция
+  if [[ -e "${StationMapNew['stationFile']}" ]]; then
+    echo "${StationMapNew['name']} уже запущена"
+    return
+  else
+    echo "${StationMapNew['name']} запущена"
+  fi
+  
+  # Запускаем станцию
+  runPowerStation StationMapNew 2>/dev/null &
+  
+  # Получаем результат запуска
+  local stationPid=$!
+  
+  sleep 0.1
+  
+  # Регестрируем станцию (сохраняем информацию о ней)
+  updateFieldInFileByName "${StationMapNew['stationFile']}" "${StationMapNew['name']}" "pid" "$stationPid"
+  sendUpdateToCP "${StationMapNew['stationFile']}" "${StationMapNew['name']}"
 }

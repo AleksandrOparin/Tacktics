@@ -6,7 +6,6 @@ source src/constants/Messages.sh
 source src/constants/Paths.sh
 
 # Dtos
-source src/dtos/Process.sh
 source src/dtos/Station.sh
 
 # Helpers

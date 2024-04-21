@@ -14,7 +14,7 @@ source src/helpers/Target.sh
 source src/helpers/Time.sh
 
 # Dtos
-source src/dtos/Process.sh
+source src/dtos/Station.sh
 source src/dtos/Target.sh
 
 

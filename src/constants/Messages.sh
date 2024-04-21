@@ -7,10 +7,9 @@ declare -A Messages=(
   ['targetDetected']="Цель обнаружена"
   ['targetMovesToSpro']="Цель движется в направлении СПРО"
   
-  ['getAmount']="Осталось снарядов - "
   ['emptyAmount']="Закончились снаряды"
   ['missedTarget']="Промах по цели"
-  ['shotAtTarget']="Выстрел в цель"
+  ['shotAtTarget']="Выстрел в цель, осталось снарядов -"
   ['targetDestroyed']="Цель уничтожена"
   
   ['unknown']="Неизвесто"

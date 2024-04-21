@@ -4,7 +4,8 @@
 source src/constants/Spro.sh
 
 # Helpers
+source src/helpers/Cp.sh
 source src/helpers/Process.sh
 
-
-stopProcessByName "${SPRO['name']}"
+sendDeleteToCP "${SPRO['stationFile']}" "${SPRO['name']}"
+stopStation SPRO

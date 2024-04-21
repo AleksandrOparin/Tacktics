@@ -11,6 +11,4 @@ source src/helpers/Json.sh
 source src/runs/PowerStation.sh
 
 
-runPowerStation SPRO 2>&1 &
-sleep 0.2
-updateFieldInFileByName "$PIDsFile" "${SPRO['name']}" "pid" "$!"
+runPowerStationWithRegistration SPRO 2>/dev/null
