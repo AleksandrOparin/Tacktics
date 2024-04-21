@@ -18,17 +18,17 @@ sleep 0.5
 
 
 # Запускаем СПРО
-bash src/scripts/starts/Spro.sh
-sleep 0.9
+#bash src/scripts/starts/Spro.sh
+#sleep 0.9
 
 
 # Запускаем ЗРДН
-#bash src/scripts/starts/zrdn/Zrdn1.sh
-#sleep 0.9
-#bash src/scripts/starts/zrdn/Zrdn2.sh
-#sleep 0.9
-#bash src/scripts/starts/zrdn/Zrdn3.sh
-#sleep 0.9
+bash src/scripts/starts/zrdn/Zrdn1.sh
+sleep 0.9
+bash src/scripts/starts/zrdn/Zrdn2.sh
+sleep 0.9
+bash src/scripts/starts/zrdn/Zrdn3.sh
+sleep 0.9
 
 
 # Запускаем КП

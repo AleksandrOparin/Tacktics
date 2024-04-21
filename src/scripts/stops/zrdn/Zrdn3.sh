@@ -4,7 +4,8 @@
 source src/constants/Zrdn.sh
 
 # Helpers
+source src/helpers/Cp.sh
 source src/helpers/Process.sh
 
-
-stopProcessByName "${ZRDN3['name']}"
+sendDeleteToCP "${ZRDN3['stationFile']}" "${ZRDN3['name']}"
+stopStation ZRDN3

@@ -8,8 +8,10 @@ declare -A ZRDN1=(
   ['distance']="600000"
   ['amount']="20"
   ['targets']="Самолет К.ракета"
+
   ['jsonFile']="temp/ZRDN1.json"
   ['shotFile']="temp/ZRDN1-shot.json"
+  ['stationFile']="temp/StationInfo/ZRDN1.json"
 )
   
 # г.Одесса
@@ -20,8 +22,10 @@ declare -A ZRDN2=(
   ['distance']="400000"
   ['amount']="20"
   ['targets']="Самолет К.ракета"
+
   ['jsonFile']="temp/ZRDN2.json"
   ['shotFile']="temp/ZRDN2-shot.json"
+  ['stationFile']="temp/StationInfo/ZRDN2.json"
 )
   
 # г.Оренбург
@@ -32,8 +36,10 @@ declare -A ZRDN3=(
   ['distance']="550000"
   ['amount']="20"
   ['targets']="Самолет К.ракета"
+
   ['jsonFile']="temp/ZRDN3.json"
   ['shotFile']="temp/ZRDN3-shot.json"
+  ['stationFile']="temp/StationInfo/ZRDN3.json"
 )
 
 export ZRDN1 ZRDN2 ZRDN3 
