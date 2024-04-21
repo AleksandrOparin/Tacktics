@@ -6,10 +6,10 @@ source src/constants/Paths.sh
 source src/constants/Variables.sh
 
 # Helpers
+source src/helpers/Array.sh
 source src/helpers/Cp.sh
 source src/helpers/Json.sh
 source src/helpers/Math.sh
-source src/helpers/Other.sh
 source src/helpers/Ping.sh
 source src/helpers/Target.sh
 source src/helpers/Time.sh

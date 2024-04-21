@@ -12,7 +12,7 @@ encodeText() {
   
   # Шифруем данные
   local encodedText
-  encodedText=$(echo "$text" | openssl enc -aes-256-cbc -e -a -pbkdf2 -iter "$ItersCount" -k "$Password")
+  encodedText=$(echo "$text" | openssl enc -aes-256-cbc -e -a -pbkdf2 -iter "${ItersCount:?}" -k "${Password:?}")
   
   # Вычисляем контрольную сумму зашифрованных данных
   local checksum
@@ -41,7 +41,7 @@ decodeText() {
   
   # Декодируем текст
   local decodedText
-  decodedText=$(echo "$encodedText" | openssl enc -aes-256-cbc -d -a -pbkdf2 -iter "$ItersCount" -k "$Password")
+  decodedText=$(echo "$encodedText" | openssl enc -aes-256-cbc -d -a -pbkdf2 -iter "${ItersCount:?}" -k "${Password:?}")
 
   # Возвращаем декодированный текст
   echo "$decodedText"
