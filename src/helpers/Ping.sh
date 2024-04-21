@@ -20,8 +20,6 @@ source src/helpers/Time.sh
 ping() {
   local responseDirectory="${CPResponseDir:?}"
   local requestFile="${CPRequestFile:?}"
-  
-  local stationsFile="${StationsFile:?}"
     
   while true; do
     # Проверяем, если файл с пингом
@@ -43,11 +41,6 @@ ping() {
     declare -a files=()
     files=($(ls -lt "$responseDirectory" | awk '{print $9}'))
     
-    local allStationNames=()
-    allStationNames=("${AllStationNames[@]}")
-    
-    echo "1 - ${allStationNames[@]}" >> logs/log.log
-    
     # Проходимся по каждому файлу
     local file
     for file in "${files[@]}"; do
@@ -64,47 +57,10 @@ ping() {
         fi        
         
         handleResponseType "$responseData"
+#        handlePingAbort # TODO: можно добавить проверку, что пинг не пришел, если станцию криво убили
         
         # Удаляем рассмотренный файл
         rm "$responseDirectory/$file"
-        
-        local type stationName
-        type=$(getFieldValue "$responseData" "type")
-        stationName=$(getFieldValue "$responseData" "name")
-        
-        echo "get - $stationName" >> logs/log.log
-        
-        # Удаляем из массива со всеми станциями текущую
-        if [[ $type == "${CPResponseTypes['ping']}" ]]; then
-          echo "get remove type - $type" >> logs/log.log
-          
-          allStationNames=($(removeInArray "$stationName" "${allStationNames[@]}"))
-          
-          echo "get and remove - ${allStationNames[@]}" >> logs/log.log
-        fi
-        
-      fi
-    done
-    
-    cat "$stationsFile" >> logs/log.log
-        
-    local name
-    for name in "${allStationNames[@]}"; do
-      echo "remove - $name" >> logs/log.log
-      
-      # Ищем запись о станции в сохраненном файле
-      findByName "$stationsFile" "$name" true
-      local isFind=$?
-      
-      # Если нашли запись
-      if [[ $isFind -eq 0 ]]; then
-        echo "remove and find - $name" >> logs/log.log
-        
-        # Удаляем информацию о станции из файла
-        removeFromFile "$stationsFile" "name" "$name"
-        
-        # Отправляем сообщение на КП о том, что станция не активна
-        sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
       fi
     done
     
@@ -187,7 +143,7 @@ handleResponseType() {
         # Записываем данные в файл
         writeToFileCheckName "$stationsFile" "$writeData"
         
-         # Отправляем сообщение на КП о том, что станция активна
+        # Отправляем сообщение на КП о том, что станция активна
         sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationActive']}"
       fi
     ;;
@@ -204,6 +160,10 @@ handleResponseType() {
     "${CPResponseTypes['delete']}" ) # Если тип сообщения delete
       echo "Delete" >> logs/log.log
     
-#      removeFromFile "$stationsFile" "name" "$stationName"
+      # Удаляем информацию о станции из файла
+      removeFromFile "$stationsFile" "name" "$stationName"
+      
+      # Отправляем сообщение на КП о том, что станция не активна
+      sendMessageToCP "$stationName" "$(getTime)" "${Messages['stationDisable']}"
   esac
 }

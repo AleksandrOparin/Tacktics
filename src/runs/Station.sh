@@ -54,7 +54,7 @@ runStation() {
     local findedTargetExists=$?
     if [ "$findedTargetExists" -eq 1 ]; then
         handleNewTarget "$id" "$x" "$y"
-        return
+        return 1
     fi
     
     # Если была, то мы уже обнариживали эту цель
@@ -139,31 +139,23 @@ runStation() {
     detected=$(getFieldValue "$targetData" "detected")
 
     # Если цель не была обнаружена (не передавали о ней информацию), то передаем
-    if [[ "$detected" == "false" ]]; then
-        # Если цель летит в сторону СПРО, то также сообщаем об этом
-        if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPROMap['x']}" "${SPROMap['y']}" "${SPROMap['distance']}"); then
-            sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetMovesToSpro']}" "$id" "$type" "$x" "$y"
-        fi
+    if [[ "$detected" == "false" ]]; then        
+      sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDetected']}" "$id" "$type" "$x" "$y"
         
-        sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetDetected']}" "$id" "$type" "$x" "$y"
+      # Если цель летит в сторону СПРО, то также сообщаем об этом
+      if (isWillCross "$prevX" "$prevY" "$x" "$y" "${SPROMap['x']}" "${SPROMap['y']}" "${SPROMap['distance']}"); then
+          sendTargetToCP "${StationMap['name']}" "$(getTime)" "${Messages['targetMovesToSpro']}" "$id" "$type" "$x" "$y"
+      fi
 
-        # Обновляем поле цели и время обнаружения
-        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detected" true
-        updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detectedTime" "$(getTime)"
+      # Обновляем поле цели и время обнаружения
+      updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detected" true
+      updateFieldInFileByID "${StationMap['jsonFile']}" "$id" "detectedTime" "$(getTime)"
     fi
   }
   
   # Получаем ассоциативные массивы значений станции и СПРО
   local -n StationMap=$1
   local -n SPROMap=$2
-  
-  # Проверяем, запущена ли станция
-  if [[ -e "${StationMap['stationFile']}" ]]; then
-    echo "${StationMap['name']} уже запущена"
-    return
-  else
-    echo "${StationMap['name']} запущена"
-  fi
   
   # Активируем отслеживание сообщений и запоминаем PID
   handlePing "${StationMap['name']}" &
@@ -207,4 +199,30 @@ runStation() {
     
     sleep .6
   done
+}
+
+runStationWithRegistration() {
+  # Получаем ассоциативные массивы значений станции и СПРО
+  local -n StationMapNew=$1
+  local -n SPROMapNew=$2
+  
+  # Проверяем, запущена ли станция
+  if [[ -e "${StationMapNew['stationFile']}" ]]; then
+    echo "${StationMapNew['name']} уже запущена"
+    return
+  else
+    echo "${StationMapNew['name']} запущена"
+  fi
+  
+  # Запускаем станцию
+  runStation StationMapNew SPROMapNew 2>/dev/null &
+  
+  # Получаем результат запуска
+  local stationPid=$!
+  
+  sleep 0.1
+  
+  # Регестрируем станцию (сохраняем информацию о ней)
+  updateFieldInFileByName "${StationMapNew['stationFile']}" "${StationMapNew['name']}" "pid" "$stationPid"
+  sendUpdateToCP "${StationMapNew['stationFile']}" "${StationMapNew['name']}"
 }
