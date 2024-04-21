@@ -3,6 +3,7 @@
 # Constants
 source src/constants/Messages.sh
 source src/constants/Paths.sh
+source src/constants/Variables.sh
 
 # Helpers
 source src/helpers/Cp.sh
@@ -210,7 +211,7 @@ runPowerStation() {
     findByName "${StationsFile:?}" "${StationMap['name']}" true
     local isStationStarted=$?
     if [[ $isStationStarted -eq 1 ]]; then
-      sleep 0.5
+      sleep "${Sleep05:?}"
       continue
     fi
     
@@ -226,7 +227,7 @@ runPowerStation() {
     # Проверяем существуют ли они
     local filesExists=$?
     if [ $filesExists -eq 1 ]; then
-      sleep 0.5
+      sleep "${Sleep05:?}"
       continue
     fi
     
@@ -257,7 +258,7 @@ runPowerStation() {
     done
     shootTargetsIDs=()
     
-    sleep .8
+    sleep "${Sleep08:?}"
   done
 }
 
@@ -279,7 +280,7 @@ runPowerStationWithRegistration() {
   # Получаем результат запуска
   local stationPid=$!
   
-  sleep 0.1
+  sleep "${Sleep01:?}"
   
   # Регестрируем станцию (сохраняем информацию о ней)
   updateFieldInFileByName "${StationMapNew['stationFile']}" "${StationMapNew['name']}" "pid" "$stationPid"

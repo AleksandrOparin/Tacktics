@@ -3,6 +3,7 @@
 # Constants
 source src/constants/Messages.sh
 source src/constants/Paths.sh
+source src/constants/Variables.sh
 
 # Helpers
 source src/helpers/Cp.sh
@@ -170,7 +171,7 @@ runStation() {
     findByName "${StationsFile:?}" "${StationMap['name']}" true
     local isStationStarted=$?
     if [[ $isStationStarted -eq 1 ]]; then
-      sleep 0.5
+      sleep "${Sleep05:?}"
       continue
     fi
     
@@ -181,7 +182,7 @@ runStation() {
     # Проверяем существуют ли они
     local filesExists=$?
     if [ $filesExists -eq 1 ]; then
-      sleep 0.5
+      sleep "${Sleep05:?}"
       continue
     fi
 
@@ -191,7 +192,7 @@ runStation() {
       processTarget "$file"
     done
     
-    sleep .3
+    sleep "${Sleep03:?}"
   done
 }
 
@@ -214,7 +215,7 @@ runStationWithRegistration() {
   # Получаем результат запуска
   local stationPid=$!
   
-  sleep 0.1
+  sleep "${Sleep01:?}"
   
   # Регестрируем станцию (сохраняем информацию о ней)
   updateFieldInFileByName "${StationMapNew['stationFile']}" "${StationMapNew['name']}" "pid" "$stationPid"

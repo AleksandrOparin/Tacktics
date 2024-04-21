@@ -4,6 +4,7 @@
 source src/constants/Cp.sh
 source src/constants/Messages.sh
 source src/constants/Paths.sh
+source src/constants/Variables.sh
 
 # Dtos
 source src/dtos/Station.sh
@@ -40,7 +41,7 @@ runCP() {
   while true; do
     # Проверяем, запущен ли КП
     if [[ ! -e "${CP['stationFile']}" ]]; then
-      sleep 0.5
+      sleep "${Sleep05:?}"
       continue
     fi
         
@@ -82,6 +83,6 @@ runCP() {
       fi
     done
     
-    sleep 0.5
+    sleep "${Sleep05:?}"
   done
 }

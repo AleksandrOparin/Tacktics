@@ -7,6 +7,7 @@ source src/Credentials.sh
 source src/constants/Cp.sh
 source src/constants/Messages.sh
 source src/constants/Paths.sh
+source src/constants/Variables.sh
 
 # Helpers
 source src/helpers/Code.sh
@@ -33,7 +34,7 @@ ping() {
     echo "$encodedText" > "$requestFile"
 
     # Ждем ответа станций
-    sleep 1
+    sleep "${Sleep1:?}"
     
     # Получаем файлы из директории с ответами
     declare -a files=()
@@ -64,7 +65,7 @@ ping() {
     # Удаляем файл пинга
     rm "$requestFile"
     
-    sleep 20
+    sleep "${Sleep20:?}"
   done
 }
 
@@ -81,7 +82,7 @@ handlePing() {
   while true; do
     if [ -e "$requestFile" ]; then
       if [[ $isFirst == "false" ]]; then
-        sleep 0.5
+        sleep "${Sleep05:?}"
         continue
       fi
     else
@@ -95,7 +96,7 @@ handlePing() {
     
     # Если не удалось декодировать 
     if [[ $isDecoded -eq 1 ]]; then
-      sleep 0.5
+      sleep "${Sleep05:?}"
       continue
     fi
     
@@ -110,7 +111,7 @@ handlePing() {
 
     isFirst="false"
 
-    sleep 0.5
+    sleep "${Sleep05:?}"
   done
 }
 
