@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# Constants
+source src/constants/Paths.sh
+
+
 declare -A GenTargets=(
   ['name']="Генератор целей"
   
-  ['stationFile']="temp/StationInfo/GenTargets.json"
+  ['stationFile']="${StationInfoDir:?}/GenTargets.json"
 )
 
 export GenTargets

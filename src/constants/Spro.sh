@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Constants
+source src/constants/Paths.sh
+
+
 # г.Хабаровск
 declare -A SPRO=(
   ['name']="СПРО"
@@ -9,9 +13,9 @@ declare -A SPRO=(
   ['amount']="10"
   ['targets']="Бал.блок"
   
-  ['jsonFile']="temp/SPRO.json"
-  ['shotFile']="temp/SPRO-shot.json"
-  ['stationFile']="temp/StationInfo/SPRO.json"
+  ['jsonFile']="${StationTargetsDir:?}/SPRO.json"
+  ['shotFile']="${StationTargetsDir:?}/SPRO-shot.json"
+  ['stationFile']="${StationInfoDir:?}/SPRO.json"
 )
 
 export SPRO

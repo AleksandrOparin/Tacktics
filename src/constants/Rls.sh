@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Constants
+source src/constants/Paths.sh
+
+
 declare -A DneprRLS=(
   ['distance']="3000000"
   ['deviation']="120"
@@ -25,8 +29,8 @@ declare -A RLS1=(
   ['deviation']="${DneprRLS['deviation']}"
   ['targets']="Бал.блок"
   
-  ['jsonFile']="temp/RLS1.json"
-  ['stationFile']="temp/StationInfo/RLS1.json"
+  ['jsonFile']="${StationTargetsDir:?}/RLS1.json"
+  ['stationFile']="${StationInfoDir:?}/RLS1.json"
 )
 
 # Координаты + "Воронеж ДМ"
@@ -39,8 +43,8 @@ declare -A RLS2=(
   ['deviation']="${VoronezhRLS['deviation']}"
   ['targets']="Бал.блок"
   
-  ['jsonFile']="temp/RLS2.json"
-  ['stationFile']="temp/StationInfo/RLS2.json"
+  ['jsonFile']="${StationTargetsDir:?}/RLS2.json"
+  ['stationFile']="${StationInfoDir:?}/RLS2.json"
 )
   
 # г.Омск + "Днепр"
@@ -53,8 +57,8 @@ declare -A RLS3=(
   ['deviation']="${DneprRLS['deviation']}"
   ['targets']="Бал.блок"
   
-  ['jsonFile']="temp/RLS3.json"
-  ['stationFile']="temp/StationInfo/RLS3.json"
+  ['jsonFile']="${StationTargetsDir:?}/RLS3.json"
+  ['stationFile']="${StationInfoDir:?}/RLS3.json"
 )
 
 export RLS1 RLS2 RLS3

@@ -34,5 +34,6 @@ export DestroyDir="${GenTargetsDir}/Destroy"
 
 # Stations
 export StationInfoDir="${TempDir}/StationInfo"
+export StationTargetsDir="${TempDir}/StationTargets"
 export StationsFile="${TempDir}/Stations.json"
 
