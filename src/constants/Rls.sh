@@ -15,7 +15,7 @@ declare -A DarialRLS=(
 )
   
 declare -A VoronezhRLS=(
-  ['distance']="6000000"
+  ['distance']="4000000"
   ['deviation']="200"
 )
   
