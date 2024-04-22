@@ -2,7 +2,7 @@
 # Version 2.2
 declare -a TargetsId
 MaxKolTargets=29      #+1
-Probability=3         #вероятность поражения 10-90%
+Probability=7         #вероятность поражения 10-90%
 
 RangeX=13000000       #метры
 RangeY=9000000        #метры
@@ -16,13 +16,13 @@ TtlBmMax=300          #Максимальное время жизни
 TtlPlMax=200
 TtlCmMax=200
 Sleeptime=1           #задержка 1c
-TempDirectory=tmp/GenTargets
+TempDirectory=/tmp/GenTargets
 DirectoryTargets="$TempDirectory/Targets"
 DestroyDirectory="$TempDirectory/Destroy"
 LogFile=$TempDirectory/GenTargets.log
 mkdir $TempDirectory >/dev/null 2>/dev/null;  mkdir $DirectoryTargets >/dev/null 2>/dev/null; mkdir $DestroyDirectory >/dev/null 2>/dev/null
 echo "Запуск в " `date` >>$LogFile
-#cd "$DirectoryTargets/"
+cd "$DirectoryTargets/"
 rm -rf $DestroyDirectory/* 2>/dev/null
 rm -rf $DirectoryTargets/* 2>/dev/null
 let NoTarget=$MaxKolTargets+1
@@ -128,7 +128,7 @@ do
         Xkoord=$(($RANDOM%($Xplus/1000)*1000+$Xmin )) ; Ykoord=$(($RANDOM%($Yplus/1000)*1000+$Ymin ))
 	#Xkoord=$((12900000   ))
 	#Ykoord=$((1   ))
-	BASE_STR=$(openssl rand -hex 16) ;NameTarget=${BASE_STR:11:6};
+	BASE_STR=$(mcookie) ;NameTarget=${BASE_STR:11:6};
         echo -e "$tip_target \t$NameTarget\t$NoTarget\t\t Koord $Xkoord\t$Ykoord\t\tSpeed $SpeedX\t$SpeedY\tTtl$ttl"
         echo -e `date +%d.%m\ %T` " $tip_target \t$NameTarget\t$NoTarget\t\t Koord $Xkoord\t$Ykoord\t\tSpeed $SpeedX\t $SpeedY \tTtl $ttl" >>$LogFile
         TargetsId[0+10*$NoTarget]=$NameTarget
@@ -159,7 +159,7 @@ do
     (( TargetsId[1+10*$NoTarget]+=${TargetsId[3+10*$NoTarget]} ))   #Координаты + скорость
     (( TargetsId[2+10*$NoTarget]+=${TargetsId[4+10*$NoTarget]} ))
     (( TargetsId[5+10*$NoTarget]+=-1 ))	#уменьшение времени жизни
-    rand=$(openssl rand -hex 16)
+    rand=$(mcookie)
     echo "X${TargetsId[1+10*$NoTarget]},Y${TargetsId[2+10*$NoTarget]}" >"$DirectoryTargets/${rand:20}${TargetsId[0+10*$NoTarget]}" 2>/dev/null
 
     if [ ${TargetsId[5+10*$NoTarget]} -le 0 ]    #Время жизни цели истекло
